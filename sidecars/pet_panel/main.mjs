@@ -1,9 +1,10 @@
 /**
- * Gemini Usage Pet Sidecar Backend (v0.1-base)
- * Minimal sidecar skeleton to verify Aux Pane connection, conversationId detection,
- * and brain directory discovery.
+ * Gemini Usage Pet Sidecar Backend (v0.2-tracker)
+ * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week) across all
+ * Antigravity conversations in <appData>/brain/*/.system_generated/logs/transcript.jsonl
+ * using fast mtime/size caching.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +25,14 @@ function safeReaddir(path) {
   }
 }
 
+function safeStat(path) {
+  try {
+    return statSync(path);
+  } catch {
+    return null;
+  }
+}
+
 function findAppDataDirs() {
   const dataDir = process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR;
   if (dataDir) {
@@ -37,6 +46,185 @@ function findAppDataDirs() {
   const root = join(homedir(), '.gemini');
   const dirs = safeReaddir(root).sort().map((name) => join(root, name));
   return dirs.filter((c) => existsSync(join(c, 'brain')));
+}
+
+// Per-conversation transcript cache: convId -> { mtimeMs, size, lastActiveMs, entries, lastTurn, chatTotals }
+const transcriptCache = new Map();
+
+function emptyBucket() {
+  return { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
+}
+
+function addTokens(bucket, inp, cache, out) {
+  bucket.input += inp;
+  bucket.cache += cache;
+  bucket.output += out;
+  bucket.total += inp + cache + out;
+  bucket.steps += 1;
+}
+
+function parseTranscriptFile(filePath) {
+  const entries = [];
+  const chatTotals = emptyBucket();
+  let currentTurn = emptyBucket();
+  let lastNonEmptyTurn = emptyBucket();
+  let lastStep = emptyBucket();
+  let lastActiveMs = 0;
+
+  let content = '';
+  try {
+    content = readFileSync(filePath, 'utf-8');
+  } catch {
+    return { entries, chatTotals, lastTurn: lastNonEmptyTurn, lastStep, lastActiveMs };
+  }
+
+  const lines = content.split('\n');
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    let obj;
+    try {
+      obj = JSON.parse(line);
+    } catch {
+      continue;
+    }
+
+    const ts = obj.created_at ? Date.parse(obj.created_at) : NaN;
+    if (Number.isFinite(ts) && ts > lastActiveMs) {
+      lastActiveMs = ts;
+    }
+
+    if (obj.type === 'USER_INPUT') {
+      currentTurn = emptyBucket();
+      continue;
+    }
+
+    const inp = Number(obj.input_tokens) || 0;
+    const cache = Number(obj.cache_read_tokens) || 0;
+    const out = Number(obj.output_tokens) || 0;
+    if (inp > 0 || cache > 0 || out > 0) {
+      addTokens(chatTotals, inp, cache, out);
+      addTokens(currentTurn, inp, cache, out);
+      lastNonEmptyTurn = { ...currentTurn };
+      lastStep = { input: inp, cache, output: out, total: inp + cache + out, steps: 1 };
+      entries.push({
+        ts: Number.isFinite(ts) ? ts : 0,
+        input: inp,
+        cache,
+        output: out,
+        total: inp + cache + out,
+      });
+    }
+  }
+
+  return {
+    entries,
+    chatTotals,
+    lastTurn: currentTurn.total > 0 ? currentTurn : lastNonEmptyTurn,
+    lastStep,
+    lastActiveMs,
+  };
+}
+
+function getConversationData(brainDir, convId) {
+  const logsDir = join(brainDir, convId, '.system_generated', 'logs');
+  let filePath = join(logsDir, 'transcript.jsonl');
+  let st = safeStat(filePath);
+  if (!st) {
+    filePath = join(logsDir, 'transcript_full.jsonl');
+    st = safeStat(filePath);
+  }
+  if (!st) return null;
+
+  const cached = transcriptCache.get(convId);
+  if (cached && cached.mtimeMs === st.mtimeMs && cached.size === st.size) {
+    return cached;
+  }
+
+  const parsed = parseTranscriptFile(filePath);
+  const record = {
+    convId,
+    mtimeMs: st.mtimeMs,
+    size: st.size,
+    lastActiveMs: parsed.lastActiveMs || st.mtimeMs,
+    entries: parsed.entries,
+    chatTotals: parsed.chatTotals,
+    lastTurn: parsed.lastTurn,
+    lastStep: parsed.lastStep,
+  };
+  transcriptCache.set(convId, record);
+  return record;
+}
+
+function computeUsageSummary(requestedConvId) {
+  const now = Date.now();
+  const fiveHoursAgo = now - 5 * 60 * 60 * 1000;
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+  const last5h = emptyBucket();
+  const thisWeek = emptyBucket();
+  const allTime = emptyBucket();
+
+  const appDataDirs = findAppDataDirs();
+  const allConvs = [];
+
+  for (const appData of appDataDirs) {
+    const brainDir = join(appData, 'brain');
+    const convIds = safeReaddir(brainDir);
+    for (const convId of convIds) {
+      const rec = getConversationData(brainDir, convId);
+      if (!rec) continue;
+      allConvs.push(rec);
+
+      for (const e of rec.entries) {
+        addTokens(allTime, e.input, e.cache, e.output);
+        if (e.ts >= sevenDaysAgo) {
+          addTokens(thisWeek, e.input, e.cache, e.output);
+        }
+        if (e.ts >= fiveHoursAgo) {
+          addTokens(last5h, e.input, e.cache, e.output);
+        }
+      }
+    }
+  }
+
+  // Resolve active conversation: use requestedConvId if valid, else most recently active conversation with tokens
+  let activeRec = null;
+  if (requestedConvId) {
+    activeRec = allConvs.find((c) => c.convId === requestedConvId) || null;
+  }
+  if (!activeRec && allConvs.length > 0) {
+    const withTokens = allConvs.filter((c) => c.chatTotals.total > 0);
+    const pool = withTokens.length > 0 ? withTokens : allConvs;
+    pool.sort((a, b) => b.lastActiveMs - a.lastActiveMs);
+    activeRec = pool[0];
+  }
+
+  return {
+    ok: true,
+    version: '0.2.0 (v0.2-tracker)',
+    conversationId: activeRec ? activeRec.convId : requestedConvId || null,
+    conversationCount: allConvs.length,
+    currentChat: activeRec
+      ? {
+          convId: activeRec.convId,
+          totals: activeRec.chatTotals,
+          lastTurn: activeRec.lastTurn,
+          lastStep: activeRec.lastStep,
+          lastActiveMs: activeRec.lastActiveMs,
+        }
+      : {
+          convId: null,
+          totals: emptyBucket(),
+          lastTurn: emptyBucket(),
+          lastStep: emptyBucket(),
+          lastActiveMs: 0,
+        },
+    last5h,
+    thisWeek,
+    allTime,
+    updatedAt: new Date(now).toISOString(),
+  };
 }
 
 const app = new SidecarApp();
@@ -66,22 +254,19 @@ app.api(
 );
 
 app.api(
+  '/api/usage',
+  (data) => {
+    const conv = data?.conversationId || app.config?.conversationId || '';
+    return computeUsageSummary(conv);
+  },
+  'GET'
+);
+
+app.api(
   '/api/status',
   (data) => {
     const conv = data?.conversationId || app.config?.conversationId || '';
-    const appDataDirs = findAppDataDirs();
-    let conversationCount = 0;
-    for (const dir of appDataDirs) {
-      conversationCount += safeReaddir(join(dir, 'brain')).length;
-    }
-    return {
-      ok: true,
-      version: '0.1.1 (v0.1-base)',
-      conversationId: conv || null,
-      appDataFound: appDataDirs.length > 0,
-      conversationCount,
-      updatedAt: new Date().toISOString(),
-    };
+    return computeUsageSummary(conv);
   },
   'GET'
 );

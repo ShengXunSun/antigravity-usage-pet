@@ -2,8 +2,9 @@
   --bg: var(--background, #1d1e22);
   --fg: var(--foreground, #f8fafc);
   --card-bg: rgba(148, 163, 184, 0.08);
-  --card-border: rgba(168, 85, 247, 0.25);
+  --card-border: rgba(168, 85, 247, 0.24);
   --accent: #c084fc;
+  --accent-bright: #e879f9;
   --muted: #94a3b8;
 }
 
@@ -17,7 +18,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--fg);
-  padding: 12px;
+  padding: 10px 12px;
   height: 100vh;
   overflow-x: hidden;
   user-select: none;
@@ -28,10 +29,151 @@ body {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
   height: 100%;
   margin: 0 auto;
+}
+
+.dashboard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.usage-card {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  padding-bottom: 6px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.chat-id {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(148, 163, 184, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(192, 132, 252, 0.18);
+  color: var(--accent);
+}
+
+.muted-tag {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hero-metric {
+  background: rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 8px;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.metric-big {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-big.accent,
+.window-total.accent {
+  color: var(--accent);
+}
+
+.metric-sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.window-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.window-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.window-title {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.window-sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.window-total {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .pet-stage {
@@ -41,7 +183,7 @@ body {
   align-items: center;
   justify-content: flex-end;
   cursor: pointer;
-  padding: 4px 0 2px;
+  padding: 2px 0;
   width: 100%;
 }
 
@@ -49,10 +191,10 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 14px;
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 6px 12px;
+  font-size: 12px;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12);
   transition: transform 0.2s ease;
 }
@@ -66,7 +208,7 @@ body {
 }
 
 .pet-img {
-  height: 50vh;
+  height: 48vh;
   width: auto;
   max-width: 96vw;
   object-fit: contain;
@@ -92,48 +234,6 @@ body {
   100% { transform: scale(1, 1) translateY(0); }
 }
 
-.status-card {
-  width: 100%;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--card-border);
-  padding-bottom: 8px;
-}
-
-.title {
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.badge {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(192, 132, 252, 0.2);
-  color: var(--accent);
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-}
-
-.label {
-  color: var(--muted);
-}
-
-.value.mono {
+.mono {
   font-family: monospace;
 }

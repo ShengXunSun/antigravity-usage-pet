@@ -5,38 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
   <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=5">
+  <link rel="stylesheet" href="/styles.css?v=6">
 </head>
 <body>
   <div class="container">
-    <div class="status-card">
-      <div class="card-header">
-        <span class="title">Gemini Pet Diagnostics</span>
-        <span class="badge" id="status-badge">Connecting...</span>
+    <!-- Top Section: Live Token Usage Cards -->
+    <div class="dashboard" id="dashboard">
+      <!-- Current Chat Card -->
+      <div class="usage-card">
+        <div class="card-header">
+          <div class="header-left">
+            <span class="live-dot"></span>
+            <span class="title">Current Chat</span>
+            <span class="chat-id mono" id="val-conv">—</span>
+          </div>
+          <span class="badge" id="status-badge">Live</span>
+        </div>
+
+        <div class="hero-grid">
+          <div class="hero-metric">
+            <span class="metric-label">Last Reply</span>
+            <span class="metric-big" id="val-last-reply">—</span>
+            <span class="metric-sub" id="sub-last-reply">In: — · Cache: — · Out: —</span>
+          </div>
+          <div class="hero-metric">
+            <span class="metric-label">This Chat Total</span>
+            <span class="metric-big accent" id="val-chat-total">—</span>
+            <span class="metric-sub" id="sub-chat-total">In: — · Cache: — · Out: —</span>
+          </div>
+        </div>
       </div>
-      <div class="stat-row">
-        <span class="label">Version</span>
-        <span class="value" id="val-version">—</span>
-      </div>
-      <div class="stat-row">
-        <span class="label">Active Chat ID</span>
-        <span class="value mono" id="val-conv">—</span>
-      </div>
-      <div class="stat-row">
-        <span class="label">Chats Found</span>
-        <span class="value" id="val-count">—</span>
+
+      <!-- 5-Hour & Weekly Totals Card -->
+      <div class="usage-card">
+        <div class="card-header">
+          <span class="title">Token Usage Summary</span>
+          <span class="muted-tag" id="val-chat-count">0 chats</span>
+        </div>
+
+        <div class="window-row">
+          <div class="window-info">
+            <span class="window-title">Last 5 Hours</span>
+            <span class="window-sub" id="sub-5h">In — · Cache — · Out —</span>
+          </div>
+          <span class="window-total" id="val-5h">—</span>
+        </div>
+
+        <div class="window-row">
+          <div class="window-info">
+            <span class="window-title">This Week (7d)</span>
+            <span class="window-sub" id="sub-week">In — · Cache — · Out —</span>
+          </div>
+          <span class="window-total accent" id="val-week">—</span>
+        </div>
       </div>
     </div>
 
+    <!-- Bottom Section: Gemini Pet Stage -->
     <div class="pet-stage" id="pet-stage" title="Click me!">
       <div class="speech-bubble" id="speech-bubble">
-        Hi! I'm your Gemini Usage Pet ✨ (v0.1-base connected!)
+        Tracking your live tokens, nya~ ✨
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=5" alt="Gemini Pet" class="pet-img" draggable="false" />
+        <img src="/pet.png?v=6" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=5"></script>
+  <script src="/app.js?v=6"></script>
 </body>
 </html>
