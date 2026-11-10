@@ -182,7 +182,7 @@ body {
 
 .pet-stage {
   margin-top: auto;
-  margin-bottom: 20vh;
+  margin-bottom: 10vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -206,8 +206,6 @@ body {
 }
 
 .pet-avatar {
-  animation: float 3.2s ease-in-out infinite;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: bottom center;
   display: flex;
   justify-content: center;
@@ -215,22 +213,25 @@ body {
 }
 
 .pet-img {
-  height: 44vh;
+  height: 46vh;
   width: auto;
   max-width: 96vw;
   object-fit: contain;
   display: block;
   transform-origin: bottom center;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .pet-avatar.bounce .pet-img {
-  transform: scale(1.08, 0.92) translateY(4px);
+  animation: jellyBounce 0.52s cubic-bezier(0.28, 0.84, 0.42, 1);
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-7px); }
+@keyframes jellyBounce {
+  0%   { transform: scale(1, 1) translateY(0); }
+  22%  { transform: scale(1.16, 0.84) translateY(8px); }
+  48%  { transform: scale(0.91, 1.11) translateY(-12px); }
+  70%  { transform: scale(1.06, 0.95) translateY(3px); }
+  86%  { transform: scale(0.98, 1.02) translateY(-2px); }
+  100% { transform: scale(1, 1) translateY(0); }
 }
 
 .mono {
