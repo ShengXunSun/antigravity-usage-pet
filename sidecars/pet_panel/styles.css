@@ -1,11 +1,11 @@
 :root {
-  --bg: var(--background, #1d1e22);
-  --fg: var(--foreground, #f8fafc);
-  --card-bg: rgba(148, 163, 184, 0.08);
-  --card-border: rgba(168, 85, 247, 0.24);
-  --accent: #c084fc;
-  --accent-bright: #e879f9;
-  --muted: #94a3b8;
+  --bg: #1d1e22;
+  --fg: #ffffff;
+  --card-bg: rgba(30, 41, 59, 0.75);
+  --card-border: rgba(56, 189, 248, 0.35);
+  --accent: #38bdf8;
+  --accent-bright: #60a5fa;
+  --muted: #93c5fd;
 }
 
 * {
@@ -79,12 +79,13 @@ body {
   font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.01em;
+  color: #ffffff;
 }
 
 .chat-id {
   font-size: 11px;
-  color: var(--muted);
-  background: rgba(148, 163, 184, 0.12);
+  color: #93c5fd;
+  background: rgba(56, 189, 248, 0.16);
   padding: 1px 6px;
   border-radius: 4px;
 }
@@ -94,13 +95,13 @@ body {
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(192, 132, 252, 0.18);
-  color: var(--accent);
+  background: rgba(56, 189, 248, 0.22);
+  color: #38bdf8;
 }
 
 .muted-tag {
   font-size: 11px;
-  color: var(--muted);
+  color: #93c5fd;
 }
 
 .hero-grid {
@@ -110,8 +111,8 @@ body {
 }
 
 .hero-metric {
-  background: rgba(15, 23, 42, 0.28);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 8px;
   padding: 7px 9px;
   display: flex;
@@ -123,23 +124,24 @@ body {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: #93c5fd;
 }
 
 .metric-big {
   font-size: 17px;
   font-weight: 700;
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
 }
 
 .metric-big.accent,
 .window-total.accent {
-  color: var(--accent);
+  color: #38bdf8;
 }
 
 .metric-sub {
   font-size: 10px;
-  color: var(--muted);
+  color: #93c5fd;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   overflow: hidden;
@@ -162,17 +164,19 @@ body {
 .window-title {
   font-size: 12px;
   font-weight: 500;
+  color: #ffffff;
 }
 
 .window-sub {
   font-size: 10px;
-  color: var(--muted);
+  color: #93c5fd;
   font-variant-numeric: tabular-nums;
 }
 
 .window-total {
   font-size: 14px;
   font-weight: 700;
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
 }
 
@@ -188,14 +192,15 @@ body {
 }
 
 .speech-bubble {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.4);
   border-radius: 14px;
   padding: 6px 12px;
   font-size: 12px;
+  color: #ffffff;
   text-align: center;
   margin-bottom: 6px;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.12);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.15);
   transition: transform 0.2s ease;
 }
 
