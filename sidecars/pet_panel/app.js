@@ -32,9 +32,8 @@
   let lineIdx = 0;
 
   function triggerBounce() {
-    avatar.classList.remove('bounce');
-    void avatar.offsetWidth;
     avatar.classList.add('bounce');
+    setTimeout(() => avatar.classList.remove('bounce'), 200);
   }
 
   stage.addEventListener('click', () => {
