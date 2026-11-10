@@ -316,6 +316,16 @@ app.api(
 );
 
 app.api(
+  '/nyaa.wav',
+  () =>
+    new Response(readFileSync(join(__dirname, 'nyaa.wav')), {
+      contentType: 'audio/wav',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+    }),
+  'GET'
+);
+
+app.api(
   '/api/usage',
   (data) => {
     const conv = data?.conversationId || app.config?.conversationId || '';
