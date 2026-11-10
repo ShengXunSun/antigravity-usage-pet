@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Whale Pet</title>
+  <title>Gemini Pet</title>
   <script src="/preload.js"></script>
   <link rel="stylesheet" href="/styles.css">
 </head>
@@ -11,29 +11,16 @@
   <div class="container">
     <div class="pet-stage" id="pet-stage" title="Click me!">
       <div class="speech-bubble" id="speech-bubble">
-        Hi! I'm your Whale Usage Pet 🐳 (v0.1-base connected!)
+        Hi! I'm your Gemini Usage Pet ✨ (v0.1-base connected!)
       </div>
-      <div class="whale-avatar" id="whale-avatar">
-        <svg viewBox="0 0 128 128" width="96" height="96">
-          <defs>
-            <linearGradient id="whaleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#4facfe" />
-              <stop offset="100%" stop-color="#00f2fe" />
-            </linearGradient>
-          </defs>
-          <path class="spout" d="M56 28 Q50 16 40 20 M56 28 Q62 16 72 20" fill="none" stroke="#4facfe" stroke-width="4" stroke-linecap="round"/>
-          <path d="M24 72 C24 44, 68 40, 82 58 C92 70, 102 64, 108 52 C110 64, 104 76, 94 80 C102 84, 106 92, 102 96 C94 94, 88 86, 80 86 C64 88, 34 88, 24 72 Z" fill="url(#whaleGrad)"/>
-          <path d="M28 74 C40 86, 62 86, 76 84 C64 78, 44 76, 28 74 Z" fill="#e0f7fa" opacity="0.85"/>
-          <circle cx="44" cy="64" r="4.5" fill="#1e293b"/>
-          <circle cx="42.5" cy="62.5" r="1.5" fill="#ffffff"/>
-          <ellipse cx="36" cy="70" rx="4" ry="2.2" fill="#ff7eb3" opacity="0.7"/>
-        </svg>
+      <div class="pet-avatar" id="pet-avatar">
+        <img src="/pet.png" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
 
     <div class="status-card">
       <div class="card-header">
-        <span class="title">Whale Pet Diagnostics</span>
+        <span class="title">Gemini Pet Diagnostics</span>
         <span class="badge" id="status-badge">Connecting...</span>
       </div>
       <div class="stat-row">

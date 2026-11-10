@@ -2,19 +2,19 @@
   "command": "node",
   "args": ["main.mjs"],
   "restart_policy": "always",
-  "display_name": "Whale Pet",
-  "description": "Interactive Whale pet showing live token usage for the current chat, 5h, and weekly windows plus plan quota sliders.",
+  "display_name": "Gemini Pet",
+  "description": "Interactive Gemini pet showing live token usage for the current chat, 5h, and weekly windows plus plan quota sliders.",
   "has_web_ui": true,
   "agent_permissions": {
     "allows_user_interactions": false
   },
   "ui_config": {
-    "display_name": "Whale Pet",
+    "display_name": "Gemini Pet",
     "views": [
       {
         "path": "/",
         "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE",
-        "title": "Whale Pet"
+        "title": "Gemini Pet"
       }
     ]
   }

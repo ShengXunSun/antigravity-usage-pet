@@ -11,12 +11,12 @@
   }
 
   const stage = $('pet-stage');
-  const avatar = $('whale-avatar');
+  const avatar = $('pet-avatar');
   const bubble = $('speech-bubble');
   const lines = [
-    "Hi! I'm your Whale Usage Pet 🐳",
-    "Bouncy & ready to track tokens! ✨",
-    "v0.1-base sidecar is live! 🎉",
+    "Hi! I'm your Gemini Usage Pet ✨",
+    "Nya~ Ready to watch your tokens! 💜",
+    "v0.1-base sidecar is live! 🌟",
   ];
   let lineIdx = 0;
 
@@ -33,7 +33,7 @@
       const q = conv ? `?conversationId=${encodeURIComponent(conv)}` : '';
       const data = await getJson(`/api/status${q}`);
       $('status-badge').textContent = data.ok ? 'Live' : 'Error';
-      $('val-version').textContent = data.version || '0.1.0';
+      $('val-version').textContent = data.version || '0.1.1';
       $('val-conv').textContent = data.conversationId ? data.conversationId.slice(0, 8) + '…' : 'None';
       $('val-count').textContent = String(data.conversationCount ?? 0);
     } catch (err) {

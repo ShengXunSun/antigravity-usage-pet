@@ -1,5 +1,5 @@
 /**
- * Whale Usage Pet Sidecar Backend (v0.1-base)
+ * Gemini Usage Pet Sidecar Backend (v0.1-base)
  * Minimal sidecar skeleton to verify Aux Pane connection, conversationId detection,
  * and brain directory discovery.
  */
@@ -11,7 +11,7 @@ import { SidecarApp, Response } from 'sidecar_sdk';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const STATIC = {
+const STATIC_TEXT = {
   '/styles.css': ['styles.css', 'text/css'],
   '/app.js': ['app.js', 'application/javascript'],
 };
@@ -43,13 +43,23 @@ const app = new SidecarApp();
 
 app.page('/', () => readFileSync(join(__dirname, 'index.html'), 'utf-8'));
 
-for (const [route, [file, type]] of Object.entries(STATIC)) {
+for (const [route, [file, type]] of Object.entries(STATIC_TEXT)) {
   app.api(
     route,
     () => new Response(readFileSync(join(__dirname, file), 'utf-8'), { contentType: type }),
     'GET'
   );
 }
+
+app.api(
+  '/pet.png',
+  () =>
+    new Response(readFileSync(join(__dirname, 'pet.png')), {
+      contentType: 'image/png',
+      headers: { 'Cache-Control': 'private, max-age=3600' },
+    }),
+  'GET'
+);
 
 app.api(
   '/api/status',
@@ -62,7 +72,7 @@ app.api(
     }
     return {
       ok: true,
-      version: '0.1.0 (v0.1-base)',
+      version: '0.1.1 (v0.1-base)',
       conversationId: conv || null,
       appDataFound: appDataDirs.length > 0,
       conversationCount,
