@@ -21,8 +21,9 @@
   let lineIdx = 0;
 
   stage.addEventListener('click', () => {
+    avatar.classList.remove('bounce');
+    void avatar.offsetWidth;
     avatar.classList.add('bounce');
-    setTimeout(() => avatar.classList.remove('bounce'), 200);
     lineIdx = (lineIdx + 1) % lines.length;
     bubble.textContent = lines[lineIdx];
   });
