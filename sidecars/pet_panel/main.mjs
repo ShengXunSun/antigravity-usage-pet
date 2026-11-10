@@ -46,7 +46,11 @@ app.page('/', () => readFileSync(join(__dirname, 'index.html'), 'utf-8'));
 for (const [route, [file, type]] of Object.entries(STATIC_TEXT)) {
   app.api(
     route,
-    () => new Response(readFileSync(join(__dirname, file), 'utf-8'), { contentType: type }),
+    () =>
+      new Response(readFileSync(join(__dirname, file), 'utf-8'), {
+        contentType: type,
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+      }),
     'GET'
   );
 }
@@ -56,7 +60,7 @@ app.api(
   () =>
     new Response(readFileSync(join(__dirname, 'pet.png')), {
       contentType: 'image/png',
-      headers: { 'Cache-Control': 'no-cache' },
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
     }),
   'GET'
 );
