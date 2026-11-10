@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="whaleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4facfe" />
+      <stop offset="100%" stop-color="#00f2fe" />
+    </linearGradient>
+  </defs>
+  <!-- Water spout -->
+  <path d="M56 28 Q50 16 40 20 M56 28 Q62 16 72 20" fill="none" stroke="#4facfe" stroke-width="4" stroke-linecap="round"/>
+  <!-- Whale body -->
+  <path d="M24 72 C24 44, 68 40, 82 58 C92 70, 102 64, 108 52 C110 64, 104 76, 94 80 C102 84, 106 92, 102 96 C94 94, 88 86, 80 86 C64 88, 34 88, 24 72 Z" fill="url(#whaleGrad)"/>
+  <!-- Belly -->
+  <path d="M28 74 C40 86, 62 86, 76 84 C64 78, 44 76, 28 74 Z" fill="#e0f7fa" opacity="0.85"/>
+  <!-- Eye -->
+  <circle cx="44" cy="64" r="4.5" fill="#1e293b"/>
+  <circle cx="42.5" cy="62.5" r="1.5" fill="#ffffff"/>
+  <!-- Blush -->
+  <ellipse cx="36" cy="70" rx="4" ry="2.2" fill="#ff7eb3" opacity="0.7"/>
+</svg>
