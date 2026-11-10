@@ -56,7 +56,7 @@ app.api(
   () =>
     new Response(readFileSync(join(__dirname, 'pet.png')), {
       contentType: 'image/png',
-      headers: { 'Cache-Control': 'private, max-age=3600' },
+      headers: { 'Cache-Control': 'no-cache' },
     }),
   'GET'
 );
