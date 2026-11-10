@@ -1,7 +1,7 @@
 /**
  * Gemini Usage Pet Sidecar Backend (v0.2-tracker)
  * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week) across all
- * Antigravity conversations in <appData>/brain/*/.system_generated/logs/transcript.jsonl
+ * Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
  * using fast mtime/size caching.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
