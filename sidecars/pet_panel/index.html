@@ -5,72 +5,109 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
   <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=9">
+  <link rel="stylesheet" href="/styles.css?v=10">
 </head>
 <body>
   <div class="container">
-    <!-- Top Section: Live Token Usage Cards -->
+    <!-- Top Section: Interactive Popup Dashboard (Tokens + Quick-Sync Quota Sliders) -->
     <div class="dashboard" id="dashboard">
-      <!-- Current Chat Card -->
+      <!-- Card 1: Token Usage (This Week & 5h + Current Chat) -->
       <div class="usage-card">
         <div class="card-header">
           <div class="header-left">
             <span class="live-dot"></span>
-            <span class="title">Current Chat</span>
+            <span class="title">Token Usage</span>
             <span class="chat-id mono" id="val-conv">—</span>
           </div>
-          <span class="badge" id="status-badge">Live</span>
+          <div class="header-right">
+            <button type="button" class="pin-btn active" id="pin-btn" title="Pin panel open when clicking pet">📌 Pinned</button>
+            <span class="badge" id="status-badge">Live</span>
+          </div>
         </div>
 
         <div class="hero-grid">
           <div class="hero-metric">
-            <span class="metric-label">Last Reply</span>
-            <span class="metric-big" id="val-last-reply">—</span>
-            <span class="metric-sub" id="sub-last-reply">In: — · Cache: — · Out: —</span>
+            <span class="metric-label">This Week (7d)</span>
+            <span class="metric-big accent" id="val-week">—</span>
+            <span class="metric-sub" id="sub-week">In — · Cache — · Out —</span>
           </div>
           <div class="hero-metric">
-            <span class="metric-label">This Chat Total</span>
-            <span class="metric-big accent" id="val-chat-total">—</span>
-            <span class="metric-sub" id="sub-chat-total">In: — · Cache: — · Out: —</span>
+            <span class="metric-label">Last 5 Hours</span>
+            <span class="metric-big" id="val-5h">—</span>
+            <span class="metric-sub" id="sub-5h">In — · Cache — · Out —</span>
           </div>
         </div>
       </div>
 
-      <!-- 5-Hour & Weekly Totals Card -->
+      <!-- Card 2: Quick-Sync Remaining Plan Quotas (%) -->
       <div class="usage-card">
         <div class="card-header">
-          <span class="title">Token Usage Summary</span>
-          <span class="muted-tag" id="val-chat-count">0 chats</span>
+          <span class="title">Remaining Plan Quotas</span>
+          <button type="button" class="action-btn" id="reset-5h-btn" title="Reset 5h limits to 100%">Reset 5h ↺</button>
         </div>
 
-        <div class="window-row">
-          <div class="window-info">
-            <span class="window-title">Last 5 Hours</span>
-            <span class="window-sub" id="sub-5h">In — · Cache — · Out —</span>
+        <!-- Gemini Weekly -->
+        <div class="quota-group">
+          <div class="quota-row">
+            <span class="quota-name">Gemini <span class="quota-tag">Weekly</span></span>
+            <span class="quota-pct" id="pct-geminiWeekly">100%</span>
           </div>
-          <span class="window-total" id="val-5h">—</span>
+          <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-geminiWeekly" data-key="geminiWeekly">
         </div>
 
-        <div class="window-row">
-          <div class="window-info">
-            <span class="window-title">This Week (7d)</span>
-            <span class="window-sub" id="sub-week">In — · Cache — · Out —</span>
+        <!-- Claude Weekly & 5h -->
+        <div class="quota-dual">
+          <div class="quota-group">
+            <div class="quota-row">
+              <span class="quota-name">Claude <span class="quota-tag">Weekly</span></span>
+              <span class="quota-pct" id="pct-claudeWeekly">100%</span>
+            </div>
+            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-claudeWeekly" data-key="claudeWeekly">
           </div>
-          <span class="window-total accent" id="val-week">—</span>
+          <div class="quota-group">
+            <div class="quota-row">
+              <span class="quota-name">Claude <span class="quota-tag">5h</span></span>
+              <span class="quota-pct" id="pct-claude5h">100%</span>
+            </div>
+            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-claude5h" data-key="claude5h">
+          </div>
+        </div>
+
+        <!-- GPT Weekly & 5h -->
+        <div class="quota-dual">
+          <div class="quota-group">
+            <div class="quota-row">
+              <span class="quota-name">GPT <span class="quota-tag">Weekly</span></span>
+              <span class="quota-pct" id="pct-gptWeekly">100%</span>
+            </div>
+            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-gptWeekly" data-key="gptWeekly">
+          </div>
+          <div class="quota-group">
+            <div class="quota-row">
+              <span class="quota-name">GPT <span class="quota-tag">5h</span></span>
+              <span class="quota-pct" id="pct-gpt5h">100%</span>
+            </div>
+            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-gpt5h" data-key="gpt5h">
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Section: Gemini Pet Stage -->
+    <!-- Bottom Section: Gemini Pet Stage + Live Current Chat Badge on Pet -->
     <div class="pet-stage" id="pet-stage" title="Click me!">
       <div class="speech-bubble" id="speech-bubble">
-        Tracking your live tokens, nya~ ✨
+        <div class="chat-live-pill">
+          <span>Reply: <strong id="val-last-reply">—</strong></span>
+          <span class="sep">·</span>
+          <span>This Chat: <strong class="accent-text" id="val-chat-total">—</strong></span>
+        </div>
+        <div class="speech-line" id="speech-line">Click me to bounce or toggle panel, nya~ ✨</div>
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=6" alt="Gemini Pet" class="pet-img" draggable="false" />
+        <img src="/pet.png?v=10" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=9"></script>
+  <script src="/app.js?v=10"></script>
 </body>
 </html>

@@ -1,10 +1,10 @@
 /**
- * Gemini Usage Pet Sidecar Backend (v0.2-tracker)
+ * Gemini Usage Pet Sidecar Backend (v0.3-pet-ui & v0.4-sliders)
  * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week) across all
  * Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
- * using fast mtime/size caching.
+ * and persists Quick-Sync plan quota sliders to disk.
  */
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,6 +46,68 @@ function findAppDataDirs() {
   const root = join(homedir(), '.gemini');
   const dirs = safeReaddir(root).sort().map((name) => join(root, name));
   return dirs.filter((c) => existsSync(join(c, 'brain')));
+}
+
+function getQuotaFilePath() {
+  const dataDir = process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR;
+  if (dataDir) {
+    try {
+      mkdirSync(dataDir, { recursive: true });
+      return join(dataDir, 'quotas.json');
+    } catch {
+      // Fallback to sidecar dir
+    }
+  }
+  return join(__dirname, 'quotas.json');
+}
+
+const DEFAULT_QUOTAS = {
+  geminiWeekly: 100,
+  claudeWeekly: 100,
+  claude5h: 100,
+  gptWeekly: 100,
+  gpt5h: 100,
+  updatedAt: null,
+};
+
+function loadQuotas() {
+  try {
+    const raw = JSON.parse(readFileSync(getQuotaFilePath(), 'utf-8'));
+    return {
+      geminiWeekly: clampPct(raw.geminiWeekly, 100),
+      claudeWeekly: clampPct(raw.claudeWeekly, 100),
+      claude5h: clampPct(raw.claude5h, 100),
+      gptWeekly: clampPct(raw.gptWeekly, 100),
+      gpt5h: clampPct(raw.gpt5h, 100),
+      updatedAt: raw.updatedAt || null,
+    };
+  } catch {
+    return { ...DEFAULT_QUOTAS };
+  }
+}
+
+function clampPct(val, fallback = 100) {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function saveQuotas(params) {
+  const current = loadQuotas();
+  const next = {
+    geminiWeekly: params.geminiWeekly !== undefined ? clampPct(params.geminiWeekly, current.geminiWeekly) : current.geminiWeekly,
+    claudeWeekly: params.claudeWeekly !== undefined ? clampPct(params.claudeWeekly, current.claudeWeekly) : current.claudeWeekly,
+    claude5h: params.claude5h !== undefined ? clampPct(params.claude5h, current.claude5h) : current.claude5h,
+    gptWeekly: params.gptWeekly !== undefined ? clampPct(params.gptWeekly, current.gptWeekly) : current.gptWeekly,
+    gpt5h: params.gpt5h !== undefined ? clampPct(params.gpt5h, current.gpt5h) : current.gpt5h,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    writeFileSync(getQuotaFilePath(), JSON.stringify(next, null, 2), 'utf-8');
+  } catch {
+    // Ignore write errors
+  }
+  return next;
 }
 
 // Per-conversation transcript cache: convId -> { mtimeMs, size, lastActiveMs, entries, lastTurn, chatTotals }
@@ -188,7 +250,6 @@ function computeUsageSummary(requestedConvId) {
     }
   }
 
-  // Resolve active conversation: use requestedConvId if valid, else most recently active conversation with tokens
   let activeRec = null;
   if (requestedConvId) {
     activeRec = allConvs.find((c) => c.convId === requestedConvId) || null;
@@ -202,7 +263,7 @@ function computeUsageSummary(requestedConvId) {
 
   return {
     ok: true,
-    version: '0.2.0 (v0.2-tracker)',
+    version: '0.3.0 (v0.3-pet-ui)',
     conversationId: activeRec ? activeRec.convId : requestedConvId || null,
     conversationCount: allConvs.length,
     currentChat: activeRec
@@ -223,6 +284,7 @@ function computeUsageSummary(requestedConvId) {
     last5h,
     thisWeek,
     allTime,
+    quotas: loadQuotas(),
     updatedAt: new Date(now).toISOString(),
   };
 }
@@ -258,6 +320,14 @@ app.api(
   (data) => {
     const conv = data?.conversationId || app.config?.conversationId || '';
     return computeUsageSummary(conv);
+  },
+  'GET'
+);
+
+app.api(
+  '/api/save-quotas',
+  (data) => {
+    return { ok: true, quotas: saveQuotas(data || {}) };
   },
   'GET'
 );
