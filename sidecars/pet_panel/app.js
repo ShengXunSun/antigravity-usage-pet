@@ -18,101 +18,16 @@
     return String(num);
   }
 
-  function fmtBreakdown(b) {
-    if (!b) return 'In 0 · Cache 0 · Out 0';
-    return `In ${fmtTokens(b.input)} · Cache ${fmtTokens(b.cache)} · Out ${fmtTokens(b.output)}`;
-  }
-
   const stage = $('pet-stage');
   const avatar = $('pet-avatar');
   const speechLine = $('speech-line');
   const dashboard = $('dashboard');
   const pinBtn = $('pin-btn');
-  const reset5hBtn = $('reset-5h-btn');
 
   let isPinned = true;
   let lastSeenChatTotal = null;
   let latestData = null;
   let lineIdx = 0;
-  let quotasInitialized = false;
-
-  const QUOTA_KEYS = ['geminiWeekly', 'claudeWeekly', 'claude5h', 'gptWeekly', 'gpt5h'];
-  const currentQuotas = {
-    geminiWeekly: 100,
-    claudeWeekly: 100,
-    claude5h: 100,
-    gptWeekly: 100,
-    gpt5h: 100,
-  };
-
-  // Load cached quotas from localStorage immediately so there is zero flicker
-  try {
-    const saved = JSON.parse(localStorage.getItem('gemini_pet_quotas') || 'null');
-    if (saved && typeof saved === 'object') {
-      for (const k of QUOTA_KEYS) {
-        if (saved[k] !== undefined) currentQuotas[k] = Number(saved[k]);
-      }
-      quotasInitialized = true;
-    }
-  } catch {
-    // Ignore localStorage errors
-  }
-
-  function renderQuotaUI(key, val) {
-    const pct = Math.max(0, Math.min(100, Math.round(Number(val) || 0)));
-    currentQuotas[key] = pct;
-    const slider = $(`slider-${key}`);
-    const label = $(`pct-${key}`);
-    if (slider) {
-      slider.value = String(pct);
-      slider.style.setProperty('--pct', `${pct}%`);
-    }
-    if (label) {
-      label.textContent = `${pct}%`;
-    }
-  }
-
-  function renderAllQuotas() {
-    for (const k of QUOTA_KEYS) {
-      renderQuotaUI(k, currentQuotas[k]);
-    }
-  }
-
-  async function persistQuotas() {
-    try {
-      localStorage.setItem('gemini_pet_quotas', JSON.stringify(currentQuotas));
-    } catch {
-      // Ignore
-    }
-    try {
-      const qs = new URLSearchParams();
-      for (const k of QUOTA_KEYS) qs.set(k, String(currentQuotas[k]));
-      await getJson(`/api/save-quotas?${qs.toString()}`);
-    } catch {
-      // Ignore network/offline save errors
-    }
-  }
-
-  for (const k of QUOTA_KEYS) {
-    const slider = $(`slider-${k}`);
-    if (!slider) continue;
-    slider.addEventListener('input', (e) => {
-      renderQuotaUI(k, e.target.value);
-    });
-    slider.addEventListener('change', () => {
-      persistQuotas();
-      triggerBounce();
-      speechLine.textContent = `Updated quota sliders! ✨`;
-    });
-  }
-
-  reset5hBtn.addEventListener('click', () => {
-    renderQuotaUI('claude5h', 100);
-    renderQuotaUI('gpt5h', 100);
-    persistQuotas();
-    triggerBounce();
-    speechLine.textContent = `5h limits reset to 100%! 🌟`;
-  });
 
   pinBtn.addEventListener('click', () => {
     isPinned = !isPinned;
@@ -122,8 +37,6 @@
       dashboard.classList.remove('collapsed');
     }
   });
-
-  renderAllQuotas();
 
   function triggerBounce() {
     avatar.classList.remove('bounce');
@@ -137,13 +50,14 @@
       dashboard.classList.toggle('collapsed');
     }
     if (!latestData) return;
-    const replyTok = fmtTokens(latestData.currentChat?.lastTurn?.total || 0);
-    const chatTok = fmtTokens(latestData.currentChat?.totals?.total || 0);
-    const weekTok = fmtTokens(latestData.thisWeek?.total || 0);
+    const lastTurn = latestData.currentChat?.lastTurn || { input: 0, cache: 0, output: 0, total: 0 };
+    const chatTotals = latestData.currentChat?.totals || { input: 0, cache: 0, output: 0, total: 0 };
+    const week = latestData.thisWeek || { input: 0, cache: 0, output: 0, total: 0 };
+
     const lines = [
-      `This week: ${weekTok} tokens · Gem ${currentQuotas.geminiWeekly}% left ✨`,
-      `Claude: ${currentQuotas.claudeWeekly}% wk / ${currentQuotas.claude5h}% 5h · GPT: ${currentQuotas.gptWeekly}% wk 💙`,
-      `Last reply used ${replyTok} tokens (Chat: ${chatTok}) 🌟`,
+      `Last reply: In ${fmtTokens(lastTurn.input)} · Cache ${fmtTokens(lastTurn.cache)} · Out ${fmtTokens(lastTurn.output)} ✨`,
+      `This chat: In ${fmtTokens(chatTotals.input)} · Cache ${fmtTokens(chatTotals.cache)} · Out ${fmtTokens(chatTotals.output)} 💙`,
+      `This week: ${fmtTokens(week.total)} total (${fmtTokens(week.cache)} cached!) 🌟`,
       isPinned ? `Unpin 📌 at the top if you want click-to-hide! 🐾` : `Click me anytime to toggle the panel! 🐾`,
     ];
     lineIdx = (lineIdx + 1) % lines.length;
@@ -163,27 +77,46 @@
 
       const lastTurn = data.currentChat?.lastTurn || { input: 0, cache: 0, output: 0, total: 0 };
       const chatTotals = data.currentChat?.totals || { input: 0, cache: 0, output: 0, total: 0 };
+      const last5h = data.last5h || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
+      const week = data.thisWeek || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
 
+      // Pet speech bubble live chat pill
       $('val-last-reply').textContent = fmtTokens(lastTurn.total);
       $('val-chat-total').textContent = fmtTokens(chatTotals.total);
 
-      $('val-5h').textContent = fmtTokens(data.last5h?.total || 0);
-      $('sub-5h').textContent = fmtBreakdown(data.last5h);
+      // Card 1: Overall Token Usage
+      $('val-week').textContent = fmtTokens(week.total);
+      $('sub-week').textContent = `${week.steps || 0} replies across ${data.conversationCount || 0} chats`;
 
-      $('val-week').textContent = fmtTokens(data.thisWeek?.total || 0);
-      $('sub-week').textContent = fmtBreakdown(data.thisWeek);
+      $('val-5h').textContent = fmtTokens(last5h.total);
+      $('sub-5h').textContent = `${last5h.steps || 0} replies in last 5h`;
 
-      if (!quotasInitialized && data.quotas) {
-        for (const k of QUOTA_KEYS) {
-          if (data.quotas[k] !== undefined) currentQuotas[k] = Number(data.quotas[k]);
-        }
-        renderAllQuotas();
-        quotasInitialized = true;
-      }
+      // Card 2: Input, Cache, Output Breakdown
+      const totalWeek = Math.max(1, week.total);
+      const inPct = Math.min(100, Math.round((week.input / totalWeek) * 100));
+      const cachePct = Math.min(100, Math.round((week.cache / totalWeek) * 100));
+      const outPct = Math.min(100, Math.max(2, Math.round((week.output / totalWeek) * 100)));
+
+      $('cache-hit-badge').textContent = `Cache: ${cachePct}%`;
+
+      $('tok-in-week').textContent = `${fmtTokens(week.input)} (${inPct}%)`;
+      $('bar-in').style.width = `${inPct}%`;
+      $('sub-in').textContent = `5h: ${fmtTokens(last5h.input)} · Chat: ${fmtTokens(chatTotals.input)} · Reply: ${fmtTokens(lastTurn.input)}`;
+
+      $('tok-cache-week').textContent = `${fmtTokens(week.cache)} (${cachePct}%)`;
+      $('bar-cache').style.width = `${cachePct}%`;
+      $('sub-cache').textContent = `5h: ${fmtTokens(last5h.cache)} · Chat: ${fmtTokens(chatTotals.cache)} · Reply: ${fmtTokens(lastTurn.cache)}`;
+
+      const realOutPct = Math.round((week.output / totalWeek) * 100);
+      $('tok-out-week').textContent = `${fmtTokens(week.output)} (${realOutPct}%)`;
+      $('bar-out').style.width = `${outPct}%`;
+      $('sub-out').textContent = `5h: ${fmtTokens(last5h.output)} · Chat: ${fmtTokens(chatTotals.output)} · Reply: ${fmtTokens(lastTurn.output)}`;
 
       if (lastSeenChatTotal !== null && chatTotals.total > lastSeenChatTotal) {
         triggerBounce();
-        speechLine.textContent = `New reply! +${fmtTokens(lastTurn.total)} tokens ✨`;
+        speechLine.textContent = `Reply: In ${fmtTokens(lastTurn.input)} · Cache ${fmtTokens(lastTurn.cache)} · Out ${fmtTokens(lastTurn.output)} ✨`;
+      } else if (lastSeenChatTotal === null && lastTurn.total > 0) {
+        speechLine.textContent = `Reply: In ${fmtTokens(lastTurn.input)} · Cache ${fmtTokens(lastTurn.cache)} · Out ${fmtTokens(lastTurn.output)} ✨`;
       }
       lastSeenChatTotal = chatTotals.total;
     } catch (err) {

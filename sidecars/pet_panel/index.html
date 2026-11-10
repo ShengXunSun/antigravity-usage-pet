@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
   <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=10">
+  <link rel="stylesheet" href="/styles.css?v=11">
 </head>
 <body>
   <div class="container">
-    <!-- Top Section: Interactive Popup Dashboard (Tokens + Quick-Sync Quota Sliders) -->
+    <!-- Top Section: Live Token Usage Dashboard -->
     <div class="dashboard" id="dashboard">
-      <!-- Card 1: Token Usage (This Week & 5h + Current Chat) -->
+      <!-- Card 1: Overall Token Usage (This Week & Last 5 Hours) -->
       <div class="usage-card">
         <div class="card-header">
           <div class="header-left">
             <span class="live-dot"></span>
-            <span class="title">Token Usage</span>
+            <span class="title">Overall Token Usage</span>
             <span class="chat-id mono" id="val-conv">—</span>
           </div>
           <div class="header-right">
@@ -29,66 +29,57 @@
           <div class="hero-metric">
             <span class="metric-label">This Week (7d)</span>
             <span class="metric-big accent" id="val-week">—</span>
-            <span class="metric-sub" id="sub-week">In — · Cache — · Out —</span>
+            <span class="metric-sub" id="sub-week">0 turns across 0 chats</span>
           </div>
           <div class="hero-metric">
             <span class="metric-label">Last 5 Hours</span>
             <span class="metric-big" id="val-5h">—</span>
-            <span class="metric-sub" id="sub-5h">In — · Cache — · Out —</span>
+            <span class="metric-sub" id="sub-5h">0 turns in last 5h</span>
           </div>
         </div>
       </div>
 
-      <!-- Card 2: Quick-Sync Remaining Plan Quotas (%) -->
+      <!-- Card 2: Input, Cache, and Output Token Breakdown -->
       <div class="usage-card">
         <div class="card-header">
-          <span class="title">Remaining Plan Quotas</span>
-          <button type="button" class="action-btn" id="reset-5h-btn" title="Reset 5h limits to 100%">Reset 5h ↺</button>
+          <span class="title">Input · Cache · Output Tokens</span>
+          <span class="chat-id" id="cache-hit-badge">Cache: —%</span>
         </div>
 
-        <!-- Gemini Weekly -->
-        <div class="quota-group">
-          <div class="quota-row">
-            <span class="quota-name">Gemini <span class="quota-tag">Weekly</span></span>
-            <span class="quota-pct" id="pct-geminiWeekly">100%</span>
+        <!-- Input Tokens -->
+        <div class="token-row">
+          <div class="token-row-top">
+            <span class="token-type">Input Tokens</span>
+            <span class="token-main" id="tok-in-week">—</span>
           </div>
-          <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-geminiWeekly" data-key="geminiWeekly">
+          <div class="token-bar-track">
+            <div class="token-bar-fill" id="bar-in" style="width: 0%"></div>
+          </div>
+          <div class="token-row-sub" id="sub-in">5h: — · This Chat: — · Last Reply: —</div>
         </div>
 
-        <!-- Claude Weekly & 5h -->
-        <div class="quota-dual">
-          <div class="quota-group">
-            <div class="quota-row">
-              <span class="quota-name">Claude <span class="quota-tag">Weekly</span></span>
-              <span class="quota-pct" id="pct-claudeWeekly">100%</span>
-            </div>
-            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-claudeWeekly" data-key="claudeWeekly">
+        <!-- Cache Read Tokens -->
+        <div class="token-row">
+          <div class="token-row-top">
+            <span class="token-type">Cache Tokens</span>
+            <span class="token-main accent-text" id="tok-cache-week">—</span>
           </div>
-          <div class="quota-group">
-            <div class="quota-row">
-              <span class="quota-name">Claude <span class="quota-tag">5h</span></span>
-              <span class="quota-pct" id="pct-claude5h">100%</span>
-            </div>
-            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-claude5h" data-key="claude5h">
+          <div class="token-bar-track">
+            <div class="token-bar-fill" id="bar-cache" style="width: 0%"></div>
           </div>
+          <div class="token-row-sub" id="sub-cache">5h: — · This Chat: — · Last Reply: —</div>
         </div>
 
-        <!-- GPT Weekly & 5h -->
-        <div class="quota-dual">
-          <div class="quota-group">
-            <div class="quota-row">
-              <span class="quota-name">GPT <span class="quota-tag">Weekly</span></span>
-              <span class="quota-pct" id="pct-gptWeekly">100%</span>
-            </div>
-            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-gptWeekly" data-key="gptWeekly">
+        <!-- Output Tokens -->
+        <div class="token-row">
+          <div class="token-row-top">
+            <span class="token-type">Output Tokens</span>
+            <span class="token-main" id="tok-out-week">—</span>
           </div>
-          <div class="quota-group">
-            <div class="quota-row">
-              <span class="quota-name">GPT <span class="quota-tag">5h</span></span>
-              <span class="quota-pct" id="pct-gpt5h">100%</span>
-            </div>
-            <input type="range" min="0" max="100" value="100" class="quota-slider" id="slider-gpt5h" data-key="gpt5h">
+          <div class="token-bar-track">
+            <div class="token-bar-fill" id="bar-out" style="width: 0%"></div>
           </div>
+          <div class="token-row-sub" id="sub-out">5h: — · This Chat: — · Last Reply: —</div>
         </div>
       </div>
     </div>
@@ -97,17 +88,17 @@
     <div class="pet-stage" id="pet-stage" title="Click me!">
       <div class="speech-bubble" id="speech-bubble">
         <div class="chat-live-pill">
-          <span>Reply: <strong id="val-last-reply">—</strong></span>
+          <span>Last Reply: <strong id="val-last-reply">—</strong></span>
           <span class="sep">·</span>
           <span>This Chat: <strong class="accent-text" id="val-chat-total">—</strong></span>
         </div>
-        <div class="speech-line" id="speech-line">Click me to bounce or toggle panel, nya~ ✨</div>
+        <div class="speech-line" id="speech-line">Click me to bounce, nya~ ✨</div>
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=10" alt="Gemini Pet" class="pet-img" draggable="false" />
+        <img src="/pet.png?v=11" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=10"></script>
+  <script src="/app.js?v=11"></script>
 </body>
 </html>
