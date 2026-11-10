@@ -3,7 +3,7 @@
   "args": ["main.mjs"],
   "restart_policy": "always",
   "display_name": "Gemini Pet",
-  "description": "Interactive Gemini pet showing live token usage for the current chat, 5h, and weekly windows plus plan quota sliders.",
+  "description": "Interactive Gemini pet showing live token usage for the current chat, 5h, and weekly windows plus Input/Cache/Output breakdowns.",
   "has_web_ui": true,
   "agent_permissions": {
     "allows_user_interactions": false
