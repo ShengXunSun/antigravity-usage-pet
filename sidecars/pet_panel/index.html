@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
   <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=13">
+  <link rel="stylesheet" href="/styles.css?v=14">
 </head>
 <body>
   <div class="container">
@@ -83,10 +83,13 @@
         </div>
       </div>
 
-      <!-- Card 3: Current Chat Context Window -->
-      <div class="usage-card">
+      <!-- Card 3: Current Chat Context Window (Hover for % Breakdown) -->
+      <div class="usage-card ctx-card" id="ctx-card">
         <div class="card-header">
-          <span class="title">Chat Context Window</span>
+          <div class="header-left">
+            <span class="title">Chat Context Window</span>
+            <span class="chat-id">Hover for %</span>
+          </div>
           <button type="button" class="pin-btn" id="ctx-cap-btn" title="Click to switch context window cap (200k / 1M)">Cap: 200k ⇄</button>
         </div>
 
@@ -99,6 +102,38 @@
             <div class="token-bar-fill" id="bar-ctx" style="width: 0%"></div>
           </div>
           <div class="token-row-sub" id="sub-ctx">Cached: — · New In: — · Out: —</div>
+        </div>
+
+        <!-- Hover Tooltip showing Context Composition (%) -->
+        <div class="ctx-tooltip" id="ctx-tooltip">
+          <div class="tooltip-header">
+            <span class="tooltip-title">Context Window Composition</span>
+            <span class="tooltip-total" id="tip-ctx-total">—</span>
+          </div>
+          <div class="seg-bar">
+            <div class="seg seg-tools" id="seg-tools" style="width: 50%"></div>
+            <div class="seg seg-msgs" id="seg-msgs" style="width: 20%"></div>
+            <div class="seg seg-sys" id="seg-sys" style="width: 20%"></div>
+            <div class="seg seg-think" id="seg-think" style="width: 10%"></div>
+          </div>
+          <div class="tooltip-grid">
+            <div class="tip-row">
+              <span class="tip-label"><span class="dot dot-tools"></span>Tools &amp; Outputs</span>
+              <span class="tip-val" id="tip-tools">—% (—)</span>
+            </div>
+            <div class="tip-row">
+              <span class="tip-label"><span class="dot dot-msgs"></span>Chat Messages</span>
+              <span class="tip-val" id="tip-msgs">—% (—)</span>
+            </div>
+            <div class="tip-row">
+              <span class="tip-label"><span class="dot dot-sys"></span>System &amp; Skills</span>
+              <span class="tip-val" id="tip-sys">—% (—)</span>
+            </div>
+            <div class="tip-row">
+              <span class="tip-label"><span class="dot dot-think"></span>Model Thinking</span>
+              <span class="tip-val" id="tip-think">—% (—)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -114,10 +149,10 @@
         <div class="speech-line" id="speech-line">Click me to bounce, nya~ ✨</div>
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=13" alt="Gemini Pet" class="pet-img" draggable="false" />
+        <img src="/pet.png?v=14" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=13"></script>
+  <script src="/app.js?v=14"></script>
 </body>
 </html>

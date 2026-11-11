@@ -43,7 +43,6 @@
 
   function playNyaa() {
     initAudioContext();
-    // Terminate any currently playing sound immediately so only 1 track plays (zero overlap)
     if (activeSource) {
       try {
         activeSource.onended = null;
@@ -115,6 +114,34 @@
     }
   } catch {}
 
+  function fallbackBreakdown(lastStep, totals) {
+    const totalCtx = Number(lastStep?.total) || 0;
+    if (totalCtx <= 0) {
+      return {
+        toolsTokens: 0,
+        messagesTokens: 0,
+        systemTokens: 0,
+        thinkingTokens: 0,
+        toolsPct: 0,
+        messagesPct: 0,
+        systemPct: 0,
+        thinkingPct: 0,
+      };
+    }
+    const systemTokens = Math.min(totalCtx, 16000);
+    const dynamic = Math.max(0, totalCtx - systemTokens);
+    const outShare = Math.min(0.45, Math.max(0.12, (Number(totals?.output) || 0) / Math.max(1, Number(totals?.input) + Number(totals?.output))));
+    const messagesTokens = Math.round(dynamic * outShare * 0.7);
+    const thinkingTokens = Math.round(dynamic * outShare * 0.3);
+    const toolsTokens = Math.max(0, dynamic - messagesTokens - thinkingTokens);
+
+    const toolsPct = Math.round((toolsTokens / totalCtx) * 100);
+    const messagesPct = Math.round((messagesTokens / totalCtx) * 100);
+    const systemPct = Math.round((systemTokens / totalCtx) * 100);
+    const thinkingPct = Math.max(0, 100 - toolsPct - messagesPct - systemPct);
+    return { toolsTokens, messagesTokens, systemTokens, thinkingTokens, toolsPct, messagesPct, systemPct, thinkingPct };
+  }
+
   function renderContextWindow(currentChat) {
     const lastStep = currentChat?.lastStep || { input: 0, cache: 0, output: 0, total: 0 };
     if (!userChoseCap && currentChat?.contextLimit) {
@@ -137,10 +164,24 @@
 
     const compactHint = rawPct >= 80 ? ' · 💡 Try /compact' : '';
     $('sub-ctx').textContent = `Cached: ${fmtTokens(lastStep.cache)} · New In: ${fmtTokens(lastStep.input)} · Out: ${fmtTokens(lastStep.output)}${compactHint}`;
+
+    // Hover Tooltip Breakdown (%)
+    const bd = currentChat?.contextBreakdown || fallbackBreakdown(lastStep, currentChat?.totals);
+    $('tip-ctx-total').textContent = `${fmtTokens(used)} tokens`;
+    $('seg-tools').style.width = `${bd.toolsPct}%`;
+    $('seg-msgs').style.width = `${bd.messagesPct}%`;
+    $('seg-sys').style.width = `${bd.systemPct}%`;
+    $('seg-think').style.width = `${bd.thinkingPct}%`;
+
+    $('tip-tools').textContent = `${bd.toolsPct}% (${fmtTokens(bd.toolsTokens)})`;
+    $('tip-msgs').textContent = `${bd.messagesPct}% (${fmtTokens(bd.messagesTokens)})`;
+    $('tip-sys').textContent = `${bd.systemPct}% (${fmtTokens(bd.systemTokens)})`;
+    $('tip-think').textContent = `${bd.thinkingPct}% (${fmtTokens(bd.thinkingTokens)})`;
   }
 
   if (ctxCapBtn) {
-    ctxCapBtn.addEventListener('click', () => {
+    ctxCapBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       userChoseCap = true;
       ctxCapIdx = (ctxCapIdx + 1) % CTX_CAPS.length;
       try {
@@ -234,7 +275,7 @@
       $('bar-out').style.width = `${outPct}%`;
       $('sub-out').textContent = `5h: ${fmtTokens(last5h.output)} · Chat: ${fmtTokens(chatTotals.output)} · Reply: ${fmtTokens(lastTurn.output)}`;
 
-      // Card 3: Current Chat Context Window
+      // Card 3: Current Chat Context Window + Hover Composition
       renderContextWindow(data.currentChat);
 
       if (lastSeenChatTotal !== null && chatTotals.total > lastSeenChatTotal) {

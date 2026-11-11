@@ -1,8 +1,8 @@
 /**
  * Gemini Usage Pet Sidecar Backend (v0.5-context-window)
  * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week),
- * Input/Cache/Output breakdowns, and Current Chat Context Window usage across all
- * Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
+ * Input/Cache/Output breakdowns, and Current Chat Context Window usage + hover composition
+ * across all Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -48,7 +48,7 @@ function findAppDataDirs() {
   return dirs.filter((c) => existsSync(join(c, 'brain')));
 }
 
-// Per-conversation transcript cache: convId -> { mtimeMs, size, lastActiveMs, entries, lastTurn, lastStep, chatTotals, activeModel }
+// Per-conversation transcript cache
 const transcriptCache = new Map();
 
 function emptyBucket() {
@@ -64,6 +64,17 @@ function addTokens(bucket, inp, cache, out) {
 }
 
 const MODEL_CHANGE_RE = /changed setting `Model Selection` from .+ to ([^.\r\n]+)\./i;
+const TRUNCATED_RE = /<truncated (\d+) bytes>/g;
+
+function trueCharLength(val) {
+  if (!val) return 0;
+  const s = typeof val === 'string' ? val : JSON.stringify(val);
+  let extra = 0;
+  for (const m of s.matchAll(TRUNCATED_RE)) {
+    extra += Number(m[1]) || 0;
+  }
+  return s.length + extra;
+}
 
 function inferContextLimit(modelName) {
   const m = String(modelName || '').toLowerCase();
@@ -82,12 +93,35 @@ function parseTranscriptFile(filePath) {
   let lastActiveMs = 0;
   let activeModel = '';
 
+  let firstStepPromptTokens = 0;
+  let firstUserChars = 0;
+  let msgChars = 0;
+  let toolChars = 0;
+  let thinkingChars = 0;
+
   let content = '';
   try {
-    // Strip literal newlines around <truncated N bytes> markers in compact transcript.jsonl
-    content = readFileSync(filePath, 'utf-8').replace(/\r?\n<truncated \d+ bytes>\r?\n/g, ' ');
+    // Preserve <truncated N bytes> inline while stripping raw newlines around it so JSON.parse succeeds
+    content = readFileSync(filePath, 'utf-8').replace(/\r?\n(<truncated \d+ bytes>)\r?\n/g, ' $1 ');
   } catch {
-    return { entries, chatTotals, lastTurn: lastNonEmptyTurn, lastStep, lastActiveMs, activeModel };
+    return {
+      entries,
+      chatTotals,
+      lastTurn: lastNonEmptyTurn,
+      lastStep,
+      lastActiveMs,
+      activeModel,
+      contextBreakdown: {
+        toolsTokens: 0,
+        messagesTokens: 0,
+        systemTokens: 0,
+        thinkingTokens: 0,
+        toolsPct: 0,
+        messagesPct: 0,
+        systemPct: 0,
+        thinkingPct: 0,
+      },
+    };
   }
 
   const lines = content.split('\n');
@@ -108,6 +142,15 @@ function parseTranscriptFile(filePath) {
 
     if (obj.type === 'USER_INPUT') {
       currentTurn = emptyBucket();
+      const cLen = trueCharLength(obj.content);
+      msgChars += cLen;
+      if (firstStepPromptTokens === 0 && firstUserChars === 0) {
+        firstUserChars = cLen;
+      }
+      if (Array.isArray(obj.media) && obj.media.length > 0) {
+        // Attached media / images count toward messages/media context (~1200 chars eq per image)
+        msgChars += obj.media.length * 4000;
+      }
       if (typeof obj.content === 'string') {
         const match = MODEL_CHANGE_RE.exec(obj.content);
         if (match && match[1]) {
@@ -117,10 +160,26 @@ function parseTranscriptFile(filePath) {
       continue;
     }
 
+    if (obj.type === 'GENERIC') {
+      toolChars += trueCharLength(obj.content);
+      continue;
+    }
+
+    if (obj.type === 'PLANNER_RESPONSE') {
+      msgChars += trueCharLength(obj.content);
+      thinkingChars += trueCharLength(obj.thinking);
+      if (obj.tool_calls) {
+        toolChars += trueCharLength(obj.tool_calls);
+      }
+    }
+
     const inp = Number(obj.input_tokens) || 0;
     const cache = Number(obj.cache_read_tokens) || 0;
     const out = Number(obj.output_tokens) || 0;
     if (inp > 0 || cache > 0 || out > 0) {
+      if (firstStepPromptTokens === 0) {
+        firstStepPromptTokens = inp + cache;
+      }
       addTokens(chatTotals, inp, cache, out);
       addTokens(currentTurn, inp, cache, out);
       lastNonEmptyTurn = { ...currentTurn };
@@ -135,6 +194,48 @@ function parseTranscriptFile(filePath) {
     }
   }
 
+  // Compute exact Context Window composition for the latest step
+  const totalCtx = lastStep.total;
+  let contextBreakdown;
+  if (totalCtx <= 0) {
+    contextBreakdown = {
+      toolsTokens: 0,
+      messagesTokens: 0,
+      systemTokens: 0,
+      thinkingTokens: 0,
+      toolsPct: 0,
+      messagesPct: 0,
+      systemPct: 0,
+      thinkingPct: 0,
+    };
+  } else {
+    const firstMsgTokens = Math.min(2000, Math.round(firstUserChars / 4));
+    const baseSys = firstStepPromptTokens > 0 ? Math.max(4000, firstStepPromptTokens - firstMsgTokens) : 15500;
+    const systemTokens = Math.min(totalCtx, baseSys);
+    const dynamicCtx = Math.max(0, totalCtx - systemTokens);
+
+    const totalDynamicChars = Math.max(1, msgChars + toolChars + thinkingChars);
+    const toolsTokens = Math.round(dynamicCtx * (toolChars / totalDynamicChars));
+    const messagesTokens = Math.round(dynamicCtx * (msgChars / totalDynamicChars));
+    const thinkingTokens = Math.max(0, dynamicCtx - toolsTokens - messagesTokens);
+
+    const toolsPct = Math.round((toolsTokens / totalCtx) * 100);
+    const messagesPct = Math.round((messagesTokens / totalCtx) * 100);
+    const systemPct = Math.round((systemTokens / totalCtx) * 100);
+    const thinkingPct = Math.max(0, 100 - toolsPct - messagesPct - systemPct);
+
+    contextBreakdown = {
+      toolsTokens,
+      messagesTokens,
+      systemTokens,
+      thinkingTokens,
+      toolsPct,
+      messagesPct,
+      systemPct,
+      thinkingPct,
+    };
+  }
+
   return {
     entries,
     chatTotals,
@@ -142,6 +243,7 @@ function parseTranscriptFile(filePath) {
     lastStep,
     lastActiveMs,
     activeModel,
+    contextBreakdown,
   };
 }
 
@@ -171,6 +273,7 @@ function getConversationData(brainDir, convId) {
     lastTurn: parsed.lastTurn,
     lastStep: parsed.lastStep,
     activeModel: parsed.activeModel,
+    contextBreakdown: parsed.contextBreakdown,
   };
   transcriptCache.set(convId, record);
   return record;
@@ -224,7 +327,7 @@ function computeUsageSummary(requestedConvId) {
 
   return {
     ok: true,
-    version: '0.5.0 (v0.5-context-window)',
+    version: '0.5.0 (v0.5)',
     conversationId: activeRec ? activeRec.convId : requestedConvId || null,
     conversationCount: allConvs.length,
     currentChat: activeRec
@@ -235,6 +338,7 @@ function computeUsageSummary(requestedConvId) {
           lastStep: activeRec.lastStep,
           activeModel,
           contextLimit,
+          contextBreakdown: activeRec.contextBreakdown,
           lastActiveMs: activeRec.lastActiveMs,
         }
       : {
@@ -244,6 +348,16 @@ function computeUsageSummary(requestedConvId) {
           lastStep: emptyBucket(),
           activeModel: '',
           contextLimit: 200_000,
+          contextBreakdown: {
+            toolsTokens: 0,
+            messagesTokens: 0,
+            systemTokens: 0,
+            thinkingTokens: 0,
+            toolsPct: 0,
+            messagesPct: 0,
+            systemPct: 0,
+            thinkingPct: 0,
+          },
           lastActiveMs: 0,
         },
     last5h,
