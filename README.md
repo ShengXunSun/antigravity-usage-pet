@@ -16,6 +16,10 @@ It docks in Antigravity's Auxiliary Side Pane alongside your chat, displaying an
   - Dedicated breakdown card for **Input Tokens**, **Cache Read Tokens**, and **Output Tokens**.
   - Shows weekly token totals, percentage share bars, overall **Cache Hit Rate (`%`)**, and granular **`5h · Chat · Reply`** sub-metrics.
 
+- **Current Chat Context Window Meter**
+  - Live progress bar showing the exact number of tokens currently occupying your active chat's context window (`input_tokens + cache_read_tokens + output_tokens` of the latest model turn).
+  - Switchable **`200k ⇄ 1M`** context cap badge with automatic model detection and a `/compact` reminder when context usage exceeds 80%.
+
 - **Live Current Chat Badge on the Pet**
   - The speech bubble right above the Gemini Pet's head displays your active conversation's **`Last Reply`** tokens and **`This Chat`** cumulative total in real time.
   - Automatically reacts with a bounce and updated breakdown whenever a new reply finishes.
@@ -45,3 +49,4 @@ Each development milestone is tagged so you can roll back at any time:
 - `v0.2-tracker` — Incremental transcript token reader (`Last Reply`, `This Chat`, `Last 5h`, `This Week`).
 - `v0.3-pet-ui` — Dedicated `Input · Cache · Output` token breakdown card & `📌 Pinned` toggle mode.
 - `v0.4-sound` — Extracted `nyaa.wav` sound effect with single-track zero-overlap Web Audio playback.
+- `v0.5-context-window` — Live `Chat Context Window` meter (`200k ⇄ 1M` cap) below the token breakdown section.

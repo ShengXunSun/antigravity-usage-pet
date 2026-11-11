@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
   <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=12">
+  <link rel="stylesheet" href="/styles.css?v=13">
 </head>
 <body>
   <div class="container">
@@ -55,7 +55,7 @@
           <div class="token-bar-track">
             <div class="token-bar-fill" id="bar-in" style="width: 0%"></div>
           </div>
-          <div class="token-row-sub" id="sub-in">5h: — · This Chat: — · Last Reply: —</div>
+          <div class="token-row-sub" id="sub-in">5h: — · Chat: — · Reply: —</div>
         </div>
 
         <!-- Cache Read Tokens -->
@@ -67,7 +67,7 @@
           <div class="token-bar-track">
             <div class="token-bar-fill" id="bar-cache" style="width: 0%"></div>
           </div>
-          <div class="token-row-sub" id="sub-cache">5h: — · This Chat: — · Last Reply: —</div>
+          <div class="token-row-sub" id="sub-cache">5h: — · Chat: — · Reply: —</div>
         </div>
 
         <!-- Output Tokens -->
@@ -79,7 +79,26 @@
           <div class="token-bar-track">
             <div class="token-bar-fill" id="bar-out" style="width: 0%"></div>
           </div>
-          <div class="token-row-sub" id="sub-out">5h: — · This Chat: — · Last Reply: —</div>
+          <div class="token-row-sub" id="sub-out">5h: — · Chat: — · Reply: —</div>
+        </div>
+      </div>
+
+      <!-- Card 3: Current Chat Context Window -->
+      <div class="usage-card">
+        <div class="card-header">
+          <span class="title">Chat Context Window</span>
+          <button type="button" class="pin-btn" id="ctx-cap-btn" title="Click to switch context window cap (200k / 1M)">Cap: 200k ⇄</button>
+        </div>
+
+        <div class="token-row">
+          <div class="token-row-top">
+            <span class="token-type" id="ctx-status-label">Active Context Size</span>
+            <span class="token-main accent-text" id="val-ctx-window">— / 200k (0%)</span>
+          </div>
+          <div class="token-bar-track ctx-track">
+            <div class="token-bar-fill" id="bar-ctx" style="width: 0%"></div>
+          </div>
+          <div class="token-row-sub" id="sub-ctx">Cached: — · New In: — · Out: —</div>
         </div>
       </div>
     </div>
@@ -95,10 +114,10 @@
         <div class="speech-line" id="speech-line">Click me to bounce, nya~ ✨</div>
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=11" alt="Gemini Pet" class="pet-img" draggable="false" />
+        <img src="/pet.png?v=13" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=12"></script>
+  <script src="/app.js?v=13"></script>
 </body>
 </html>

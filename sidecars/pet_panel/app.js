@@ -92,11 +92,63 @@
   const speechLine = $('speech-line');
   const dashboard = $('dashboard');
   const pinBtn = $('pin-btn');
+  const ctxCapBtn = $('ctx-cap-btn');
 
   let isPinned = true;
   let lastSeenChatTotal = null;
   let latestData = null;
   let lineIdx = 0;
+
+  // Context window cap options: 200k (Claude/GPT/standard) or 1M (Gemini)
+  const CTX_CAPS = [200_000, 1_000_000];
+  let ctxCapIdx = 0;
+  let userChoseCap = false;
+
+  try {
+    const savedCap = Number(localStorage.getItem('gemini_pet_ctx_cap') || '0');
+    if (savedCap === 1_000_000) {
+      ctxCapIdx = 1;
+      userChoseCap = true;
+    } else if (savedCap === 200_000) {
+      ctxCapIdx = 0;
+      userChoseCap = true;
+    }
+  } catch {}
+
+  function renderContextWindow(currentChat) {
+    const lastStep = currentChat?.lastStep || { input: 0, cache: 0, output: 0, total: 0 };
+    if (!userChoseCap && currentChat?.contextLimit) {
+      ctxCapIdx = currentChat.contextLimit >= 1_000_000 ? 1 : 0;
+    }
+    const cap = CTX_CAPS[ctxCapIdx];
+    const capLabel = cap >= 1_000_000 ? '1M' : '200k';
+    if (ctxCapBtn) {
+      ctxCapBtn.textContent = `Cap: ${capLabel} ⇄`;
+    }
+
+    const used = Number(lastStep.total) || 0;
+    const rawPct = Math.round((used / cap) * 100);
+    const barPct = Math.min(100, Math.max(used > 0 ? 2 : 0, rawPct));
+
+    const modelLabel = currentChat?.activeModel ? currentChat.activeModel : 'Active Context Size';
+    $('ctx-status-label').textContent = modelLabel;
+    $('val-ctx-window').textContent = `${fmtTokens(used)} / ${capLabel} (${rawPct}%)`;
+    $('bar-ctx').style.width = `${barPct}%`;
+
+    const compactHint = rawPct >= 80 ? ' · 💡 Try /compact' : '';
+    $('sub-ctx').textContent = `Cached: ${fmtTokens(lastStep.cache)} · New In: ${fmtTokens(lastStep.input)} · Out: ${fmtTokens(lastStep.output)}${compactHint}`;
+  }
+
+  if (ctxCapBtn) {
+    ctxCapBtn.addEventListener('click', () => {
+      userChoseCap = true;
+      ctxCapIdx = (ctxCapIdx + 1) % CTX_CAPS.length;
+      try {
+        localStorage.setItem('gemini_pet_ctx_cap', String(CTX_CAPS[ctxCapIdx]));
+      } catch {}
+      if (latestData) renderContextWindow(latestData.currentChat);
+    });
+  }
 
   pinBtn.addEventListener('click', () => {
     isPinned = !isPinned;
@@ -121,12 +173,12 @@
     }
     if (!latestData) return;
     const lastTurn = latestData.currentChat?.lastTurn || { input: 0, cache: 0, output: 0, total: 0 };
-    const chatTotals = latestData.currentChat?.totals || { input: 0, cache: 0, output: 0, total: 0 };
+    const lastStep = latestData.currentChat?.lastStep || { input: 0, cache: 0, output: 0, total: 0 };
     const week = latestData.thisWeek || { input: 0, cache: 0, output: 0, total: 0 };
 
     const lines = [
-      `Nyaa~ Last reply: In ${fmtTokens(lastTurn.input)} · Cache ${fmtTokens(lastTurn.cache)} · Out ${fmtTokens(lastTurn.output)} ✨`,
-      `Nyaa~ This chat: In ${fmtTokens(chatTotals.input)} · Cache ${fmtTokens(chatTotals.cache)} · Out ${fmtTokens(chatTotals.output)} 💙`,
+      `Nyaa~ Context window is at ${fmtTokens(lastStep.total)} tokens! ✨`,
+      `Nyaa~ Last reply: In ${fmtTokens(lastTurn.input)} · Cache ${fmtTokens(lastTurn.cache)} · Out ${fmtTokens(lastTurn.output)} 💙`,
       `Nyaa~ This week: ${fmtTokens(week.total)} total (${fmtTokens(week.cache)} cached!) 🌟`,
       isPinned ? `Unpin 📌 at the top if you want click-to-hide! 🐾` : `Click me anytime to toggle the panel! 🐾`,
     ];
@@ -150,15 +202,18 @@
       const last5h = data.last5h || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
       const week = data.thisWeek || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
 
+      // Pet speech bubble live chat pill
       $('val-last-reply').textContent = fmtTokens(lastTurn.total);
       $('val-chat-total').textContent = fmtTokens(chatTotals.total);
 
+      // Card 1: Overall Token Usage
       $('val-week').textContent = fmtTokens(week.total);
       $('sub-week').textContent = `${week.steps || 0} replies across ${data.conversationCount || 0} chats`;
 
       $('val-5h').textContent = fmtTokens(last5h.total);
       $('sub-5h').textContent = `${last5h.steps || 0} replies in last 5h`;
 
+      // Card 2: Input, Cache, Output Breakdown
       const totalWeek = Math.max(1, week.total);
       const inPct = Math.min(100, Math.round((week.input / totalWeek) * 100));
       const cachePct = Math.min(100, Math.round((week.cache / totalWeek) * 100));
@@ -178,6 +233,9 @@
       $('tok-out-week').textContent = `${fmtTokens(week.output)} (${realOutPct}%)`;
       $('bar-out').style.width = `${outPct}%`;
       $('sub-out').textContent = `5h: ${fmtTokens(last5h.output)} · Chat: ${fmtTokens(chatTotals.output)} · Reply: ${fmtTokens(lastTurn.output)}`;
+
+      // Card 3: Current Chat Context Window
+      renderContextWindow(data.currentChat);
 
       if (lastSeenChatTotal !== null && chatTotals.total > lastSeenChatTotal) {
         triggerBounce();

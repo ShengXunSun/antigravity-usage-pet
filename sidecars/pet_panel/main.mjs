@@ -1,10 +1,10 @@
 /**
- * Gemini Usage Pet Sidecar Backend (v0.3-pet-ui & v0.4-sliders)
- * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week) across all
+ * Gemini Usage Pet Sidecar Backend (v0.5-context-window)
+ * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week),
+ * Input/Cache/Output breakdowns, and Current Chat Context Window usage across all
  * Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
- * and persists Quick-Sync plan quota sliders to disk.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,69 +48,7 @@ function findAppDataDirs() {
   return dirs.filter((c) => existsSync(join(c, 'brain')));
 }
 
-function getQuotaFilePath() {
-  const dataDir = process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR;
-  if (dataDir) {
-    try {
-      mkdirSync(dataDir, { recursive: true });
-      return join(dataDir, 'quotas.json');
-    } catch {
-      // Fallback to sidecar dir
-    }
-  }
-  return join(__dirname, 'quotas.json');
-}
-
-const DEFAULT_QUOTAS = {
-  geminiWeekly: 100,
-  claudeWeekly: 100,
-  claude5h: 100,
-  gptWeekly: 100,
-  gpt5h: 100,
-  updatedAt: null,
-};
-
-function loadQuotas() {
-  try {
-    const raw = JSON.parse(readFileSync(getQuotaFilePath(), 'utf-8'));
-    return {
-      geminiWeekly: clampPct(raw.geminiWeekly, 100),
-      claudeWeekly: clampPct(raw.claudeWeekly, 100),
-      claude5h: clampPct(raw.claude5h, 100),
-      gptWeekly: clampPct(raw.gptWeekly, 100),
-      gpt5h: clampPct(raw.gpt5h, 100),
-      updatedAt: raw.updatedAt || null,
-    };
-  } catch {
-    return { ...DEFAULT_QUOTAS };
-  }
-}
-
-function clampPct(val, fallback = 100) {
-  const n = Number(val);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-
-function saveQuotas(params) {
-  const current = loadQuotas();
-  const next = {
-    geminiWeekly: params.geminiWeekly !== undefined ? clampPct(params.geminiWeekly, current.geminiWeekly) : current.geminiWeekly,
-    claudeWeekly: params.claudeWeekly !== undefined ? clampPct(params.claudeWeekly, current.claudeWeekly) : current.claudeWeekly,
-    claude5h: params.claude5h !== undefined ? clampPct(params.claude5h, current.claude5h) : current.claude5h,
-    gptWeekly: params.gptWeekly !== undefined ? clampPct(params.gptWeekly, current.gptWeekly) : current.gptWeekly,
-    gpt5h: params.gpt5h !== undefined ? clampPct(params.gpt5h, current.gpt5h) : current.gpt5h,
-    updatedAt: new Date().toISOString(),
-  };
-  try {
-    writeFileSync(getQuotaFilePath(), JSON.stringify(next, null, 2), 'utf-8');
-  } catch {
-    // Ignore write errors
-  }
-  return next;
-}
-
-// Per-conversation transcript cache: convId -> { mtimeMs, size, lastActiveMs, entries, lastTurn, chatTotals }
+// Per-conversation transcript cache: convId -> { mtimeMs, size, lastActiveMs, entries, lastTurn, lastStep, chatTotals, activeModel }
 const transcriptCache = new Map();
 
 function emptyBucket() {
@@ -125,6 +63,16 @@ function addTokens(bucket, inp, cache, out) {
   bucket.steps += 1;
 }
 
+const MODEL_CHANGE_RE = /changed setting `Model Selection` from .+ to ([^.\r\n]+)\./i;
+
+function inferContextLimit(modelName) {
+  const m = String(modelName || '').toLowerCase();
+  if (m.includes('gemini')) return 1_000_000;
+  if (m.includes('claude')) return 200_000;
+  if (m.includes('gpt') || m.includes('o1') || m.includes('o3') || m.includes('o4')) return 200_000;
+  return 200_000;
+}
+
 function parseTranscriptFile(filePath) {
   const entries = [];
   const chatTotals = emptyBucket();
@@ -132,12 +80,14 @@ function parseTranscriptFile(filePath) {
   let lastNonEmptyTurn = emptyBucket();
   let lastStep = emptyBucket();
   let lastActiveMs = 0;
+  let activeModel = '';
 
   let content = '';
   try {
-    content = readFileSync(filePath, 'utf-8');
+    // Strip literal newlines around <truncated N bytes> markers in compact transcript.jsonl
+    content = readFileSync(filePath, 'utf-8').replace(/\r?\n<truncated \d+ bytes>\r?\n/g, ' ');
   } catch {
-    return { entries, chatTotals, lastTurn: lastNonEmptyTurn, lastStep, lastActiveMs };
+    return { entries, chatTotals, lastTurn: lastNonEmptyTurn, lastStep, lastActiveMs, activeModel };
   }
 
   const lines = content.split('\n');
@@ -158,6 +108,12 @@ function parseTranscriptFile(filePath) {
 
     if (obj.type === 'USER_INPUT') {
       currentTurn = emptyBucket();
+      if (typeof obj.content === 'string') {
+        const match = MODEL_CHANGE_RE.exec(obj.content);
+        if (match && match[1]) {
+          activeModel = match[1].trim();
+        }
+      }
       continue;
     }
 
@@ -185,6 +141,7 @@ function parseTranscriptFile(filePath) {
     lastTurn: currentTurn.total > 0 ? currentTurn : lastNonEmptyTurn,
     lastStep,
     lastActiveMs,
+    activeModel,
   };
 }
 
@@ -213,6 +170,7 @@ function getConversationData(brainDir, convId) {
     chatTotals: parsed.chatTotals,
     lastTurn: parsed.lastTurn,
     lastStep: parsed.lastStep,
+    activeModel: parsed.activeModel,
   };
   transcriptCache.set(convId, record);
   return record;
@@ -261,9 +219,12 @@ function computeUsageSummary(requestedConvId) {
     activeRec = pool[0];
   }
 
+  const activeModel = activeRec?.activeModel || '';
+  const contextLimit = inferContextLimit(activeModel);
+
   return {
     ok: true,
-    version: '0.3.0 (v0.3-pet-ui)',
+    version: '0.5.0 (v0.5-context-window)',
     conversationId: activeRec ? activeRec.convId : requestedConvId || null,
     conversationCount: allConvs.length,
     currentChat: activeRec
@@ -272,6 +233,8 @@ function computeUsageSummary(requestedConvId) {
           totals: activeRec.chatTotals,
           lastTurn: activeRec.lastTurn,
           lastStep: activeRec.lastStep,
+          activeModel,
+          contextLimit,
           lastActiveMs: activeRec.lastActiveMs,
         }
       : {
@@ -279,12 +242,13 @@ function computeUsageSummary(requestedConvId) {
           totals: emptyBucket(),
           lastTurn: emptyBucket(),
           lastStep: emptyBucket(),
+          activeModel: '',
+          contextLimit: 200_000,
           lastActiveMs: 0,
         },
     last5h,
     thisWeek,
     allTime,
-    quotas: loadQuotas(),
     updatedAt: new Date(now).toISOString(),
   };
 }
@@ -330,14 +294,6 @@ app.api(
   (data) => {
     const conv = data?.conversationId || app.config?.conversationId || '';
     return computeUsageSummary(conv);
-  },
-  'GET'
-);
-
-app.api(
-  '/api/save-quotas',
-  (data) => {
-    return { ok: true, quotas: saveQuotas(data || {}) };
   },
   'GET'
 );

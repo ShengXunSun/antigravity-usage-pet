@@ -18,7 +18,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--fg);
-  padding: 8px 10px;
+  padding: 6px 10px;
   height: 100vh;
   overflow-x: hidden;
   user-select: none;
@@ -29,7 +29,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   height: 100%;
   margin: 0 auto;
@@ -39,7 +39,7 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
@@ -53,11 +53,11 @@ body {
   width: 100%;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 11px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 6px 9px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .card-header {
@@ -65,7 +65,7 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-  padding-bottom: 5px;
+  padding-bottom: 4px;
 }
 
 .header-left,
@@ -85,7 +85,7 @@ body {
 
 .title {
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11.5px;
   letter-spacing: 0.01em;
   color: #ffffff;
 }
@@ -101,7 +101,7 @@ body {
 .badge {
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 1px 6px;
   border-radius: 999px;
   background: rgba(56, 189, 248, 0.22);
   color: #38bdf8;
@@ -113,7 +113,7 @@ body {
   color: #93c5fd;
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 7px;
+  padding: 1px 7px;
   border-radius: 999px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
@@ -134,22 +134,22 @@ body {
 .hero-metric {
   background: rgba(15, 23, 42, 0.55);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 8px;
-  padding: 6px 8px;
+  border-radius: 7px;
+  padding: 5px 7px;
   display: flex;
   flex-direction: column;
   gap: 1px;
 }
 
 .metric-label {
-  font-size: 10px;
+  font-size: 9.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #93c5fd;
 }
 
 .metric-big {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
@@ -161,7 +161,7 @@ body {
 }
 
 .metric-sub {
-  font-size: 9.5px;
+  font-size: 9px;
   color: #93c5fd;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -169,15 +169,15 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Input / Cache / Output Token Rows */
+/* Input / Cache / Output & Context Window Rows */
 .token-row {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2.5px;
   background: rgba(15, 23, 42, 0.48);
   border: 1px solid rgba(56, 189, 248, 0.22);
-  border-radius: 8px;
-  padding: 5px 8px;
+  border-radius: 7px;
+  padding: 4px 7px;
 }
 
 .token-row-top {
@@ -187,13 +187,13 @@ body {
 }
 
 .token-type {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   color: #ffffff;
 }
 
 .token-main {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
@@ -207,6 +207,10 @@ body {
   overflow: hidden;
 }
 
+.token-bar-track.ctx-track {
+  height: 5px;
+}
+
 .token-bar-fill {
   height: 100%;
   border-radius: 999px;
@@ -215,7 +219,7 @@ body {
 }
 
 .token-row-sub {
-  font-size: 9.5px;
+  font-size: 9px;
   color: #93c5fd;
   font-variant-numeric: tabular-nums;
 }
@@ -237,19 +241,19 @@ body {
   background: rgba(30, 41, 59, 0.88);
   border: 1px solid rgba(56, 189, 248, 0.45);
   border-radius: 14px;
-  padding: 6px 12px;
-  font-size: 11.5px;
+  padding: 5px 11px;
+  font-size: 11px;
   color: #ffffff;
   text-align: center;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   box-shadow: 0 4px 14px rgba(56, 189, 248, 0.16);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1.5px;
 }
 
 .chat-live-pill {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
 }
@@ -260,7 +264,7 @@ body {
 }
 
 .speech-line {
-  font-size: 10.5px;
+  font-size: 10px;
   color: #93c5fd;
 }
 
@@ -272,7 +276,7 @@ body {
 }
 
 .pet-img {
-  height: 44vh;
+  height: 40vh;
   width: auto;
   max-width: 96vw;
   object-fit: contain;
