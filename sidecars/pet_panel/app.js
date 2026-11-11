@@ -157,13 +157,13 @@
     const rawPct = Math.round((used / cap) * 100);
     const barPct = Math.min(100, Math.max(used > 0 ? 2 : 0, rawPct));
 
-    const modelLabel = currentChat?.activeModel ? currentChat.activeModel : 'Active Context Size';
-    $('ctx-status-label').textContent = modelLabel;
+    $('ctx-status-label').textContent = 'Active Context Size';
     $('val-ctx-window').textContent = `${fmtTokens(used)} / ${capLabel} (${rawPct}%)`;
     $('bar-ctx').style.width = `${barPct}%`;
 
+    const compactedNote = currentChat?.compactedFrom ? ` · Auto-compacted @ ${fmtTokens(currentChat.compactedFrom)}` : '';
     const compactHint = rawPct >= 80 ? ' · 💡 Try /compact' : '';
-    $('sub-ctx').textContent = `Cached: ${fmtTokens(lastStep.cache)} · New In: ${fmtTokens(lastStep.input)} · Out: ${fmtTokens(lastStep.output)}${compactHint}`;
+    $('sub-ctx').textContent = `Cached: ${fmtTokens(lastStep.cache)} · New In: ${fmtTokens(lastStep.input)} · Out: ${fmtTokens(lastStep.output)}${compactedNote}${compactHint}`;
 
     // Hover Tooltip Breakdown (%)
     const bd = currentChat?.contextBreakdown || fallbackBreakdown(lastStep, currentChat?.totals);

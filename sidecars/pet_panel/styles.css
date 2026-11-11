@@ -292,9 +292,9 @@ body {
 }
 
 .seg-tools { background: #38bdf8; }
-.seg-msgs  { background: #ffffff; }
-.seg-sys   { background: #60a5fa; }
-.seg-think { background: #93c5fd; }
+.seg-msgs  { background: #34d399; }
+.seg-sys   { background: #fbbf24; }
+.seg-think { background: #f43f5e; }
 
 .tooltip-grid {
   display: flex;
@@ -318,22 +318,22 @@ body {
 }
 
 .tip-val {
-  color: #93c5fd;
+  color: #ffffff;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
 
-.dot-tools { background: #38bdf8; }
-.dot-msgs  { background: #ffffff; }
-.dot-sys   { background: #60a5fa; }
-.dot-think { background: #93c5fd; }
+.dot-tools { background: #38bdf8; box-shadow: 0 0 6px rgba(56, 189, 248, 0.6); }
+.dot-msgs  { background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.6); }
+.dot-sys   { background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, 0.6); }
+.dot-think { background: #f43f5e; box-shadow: 0 0 6px rgba(244, 63, 94, 0.6); }
 
 /* Bottom Pet Stage (margin-bottom: 10vh, no idle float, springy jellyBounce on click) */
 .pet-stage {

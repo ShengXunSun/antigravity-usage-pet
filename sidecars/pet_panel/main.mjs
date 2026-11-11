@@ -1,5 +1,5 @@
 /**
- * Gemini Usage Pet Sidecar Backend (v0.5-context-window)
+ * Gemini Usage Pet Sidecar Backend (v0.5)
  * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week),
  * Input/Cache/Output breakdowns, and Current Chat Context Window usage + hover composition
  * across all Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
@@ -63,7 +63,8 @@ function addTokens(bucket, inp, cache, out) {
   bucket.steps += 1;
 }
 
-const MODEL_CHANGE_RE = /changed setting `Model Selection` from .+ to ([^.\r\n]+)\./i;
+// Non-greedy match before ". No need to comment" so we only capture the model name
+const MODEL_CHANGE_RE = /changed setting `Model Selection` from [^\r\n]+? to ([^\r\n]+?)\.\s*No need/i;
 const TRUNCATED_RE = /<truncated (\d+) bytes>/g;
 
 function trueCharLength(val) {
@@ -92,6 +93,8 @@ function parseTranscriptFile(filePath) {
   let lastStep = emptyBucket();
   let lastActiveMs = 0;
   let activeModel = '';
+  let compactedFrom = 0;
+  let checkpointCount = 0;
 
   let firstStepPromptTokens = 0;
   let firstUserChars = 0;
@@ -111,6 +114,8 @@ function parseTranscriptFile(filePath) {
       lastStep,
       lastActiveMs,
       activeModel,
+      compactedFrom: 0,
+      checkpointCount: 0,
       contextBreakdown: {
         toolsTokens: 0,
         messagesTokens: 0,
@@ -148,7 +153,6 @@ function parseTranscriptFile(filePath) {
         firstUserChars = cLen;
       }
       if (Array.isArray(obj.media) && obj.media.length > 0) {
-        // Attached media / images count toward messages/media context (~1200 chars eq per image)
         msgChars += obj.media.length * 4000;
       }
       if (typeof obj.content === 'string') {
@@ -176,6 +180,20 @@ function parseTranscriptFile(filePath) {
     const inp = Number(obj.input_tokens) || 0;
     const cache = Number(obj.cache_read_tokens) || 0;
     const out = Number(obj.output_tokens) || 0;
+
+    if (obj.type === 'CHECKPOINT') {
+      // Antigravity auto-compacted the conversation into a <CONTEXT_SUMMARY>
+      const preCompactTotal = inp + cache + out;
+      if (preCompactTotal > 0) {
+        compactedFrom = preCompactTotal;
+      }
+      checkpointCount += 1;
+      // After compaction, previous messages & tool outputs are replaced by the summary (~out tokens)
+      msgChars = Math.max(2000, out * 4);
+      toolChars = 0;
+      thinkingChars = 0;
+    }
+
     if (inp > 0 || cache > 0 || out > 0) {
       if (firstStepPromptTokens === 0) {
         firstStepPromptTokens = inp + cache;
@@ -210,7 +228,9 @@ function parseTranscriptFile(filePath) {
     };
   } else {
     const firstMsgTokens = Math.min(2000, Math.round(firstUserChars / 4));
-    const baseSys = firstStepPromptTokens > 0 ? Math.max(4000, firstStepPromptTokens - firstMsgTokens) : 15500;
+    // If auto-compacted, step right after CHECKPOINT has ~14.3k system + ~2.9k summary
+    const rawSys = firstStepPromptTokens > 0 ? Math.max(4000, firstStepPromptTokens - firstMsgTokens) : 14500;
+    const baseSys = checkpointCount > 0 ? Math.min(rawSys, 14300) : rawSys;
     const systemTokens = Math.min(totalCtx, baseSys);
     const dynamicCtx = Math.max(0, totalCtx - systemTokens);
 
@@ -243,6 +263,8 @@ function parseTranscriptFile(filePath) {
     lastStep,
     lastActiveMs,
     activeModel,
+    compactedFrom,
+    checkpointCount,
     contextBreakdown,
   };
 }
@@ -273,6 +295,8 @@ function getConversationData(brainDir, convId) {
     lastTurn: parsed.lastTurn,
     lastStep: parsed.lastStep,
     activeModel: parsed.activeModel,
+    compactedFrom: parsed.compactedFrom,
+    checkpointCount: parsed.checkpointCount,
     contextBreakdown: parsed.contextBreakdown,
   };
   transcriptCache.set(convId, record);
@@ -327,7 +351,7 @@ function computeUsageSummary(requestedConvId) {
 
   return {
     ok: true,
-    version: '0.5.0 (v0.5)',
+    version: '0.5.1 (v0.5)',
     conversationId: activeRec ? activeRec.convId : requestedConvId || null,
     conversationCount: allConvs.length,
     currentChat: activeRec
@@ -338,6 +362,8 @@ function computeUsageSummary(requestedConvId) {
           lastStep: activeRec.lastStep,
           activeModel,
           contextLimit,
+          compactedFrom: activeRec.compactedFrom || 0,
+          checkpointCount: activeRec.checkpointCount || 0,
           contextBreakdown: activeRec.contextBreakdown,
           lastActiveMs: activeRec.lastActiveMs,
         }
@@ -348,6 +374,8 @@ function computeUsageSummary(requestedConvId) {
           lastStep: emptyBucket(),
           activeModel: '',
           contextLimit: 200_000,
+          compactedFrom: 0,
+          checkpointCount: 0,
           contextBreakdown: {
             toolsTokens: 0,
             messagesTokens: 0,
