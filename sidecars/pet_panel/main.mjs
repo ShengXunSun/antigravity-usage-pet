@@ -69,16 +69,13 @@ for (const [route, [buf, contentType]] of Object.entries(binaryAssets)) {
   );
 }
 
-// Stale pre-v0.8 iframes poll GET /api/usage; return only assetVersion so they reload to POST without leaking data
-app.api(
-  '/api/usage',
-  () => ({
-    ok: true,
-    reloadRequired: true,
-    assetVersion: ASSET_VERSION,
-  }),
-  'GET'
-);
+let legacyReloadSeq = 0;
+const serveLegacyReloadToken = () => ({
+  ok: true,
+  assetVersion: `${ASSET_VERSION}-${++legacyReloadSeq}`,
+});
+
+app.api('/api/usage', serveLegacyReloadToken, 'GET');
 
 app.api(
   '/api/usage',

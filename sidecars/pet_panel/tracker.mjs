@@ -359,10 +359,12 @@ function applyTranscriptLine(state, rawLine, fallbackTs) {
 
 function readIncrementalTranscript(state, st, nowMs) {
   let fd = -1;
+  let canAppend = state.offset > 0 && st.size >= state.offset;
+  let slice = null;
+
   try {
     fd = openSync(state.filePath, 'r');
 
-    let canAppend = state.offset > 0 && st.size >= state.offset;
     if (canAppend && state.headSig.length > 0) {
       const checkHead = Buffer.allocUnsafe(state.headSig.length);
       const nHead = readSync(fd, checkHead, 0, checkHead.length, 0);
@@ -379,86 +381,88 @@ function readIncrementalTranscript(state, st, nowMs) {
       }
     }
 
-    if (!canAppend) {
-      const fresh = createConversationState(state.convId, state.filePath);
-      Object.assign(state, fresh);
-    }
-
-    const bytesToRead = st.size - state.offset;
+    const readOffset = canAppend ? state.offset : 0;
+    const bytesToRead = st.size - readOffset;
     if (bytesToRead > 0) {
       const chunk = Buffer.allocUnsafe(bytesToRead);
-      const bytesRead = readSync(fd, chunk, 0, bytesToRead, state.offset);
-      if (state.offset === 0 && bytesRead > 0) {
-        state.headSig = Buffer.from(chunk.subarray(0, Math.min(SIG_BYTES, bytesRead)));
-      }
-
-      const slice = chunk.subarray(0, bytesRead);
-      const lastNewline = slice.lastIndexOf(0x0a);
-      let consumableBytes = lastNewline !== -1 ? lastNewline + 1 : 0;
-
-      if (consumableBytes > 0) {
-        const text = slice.toString('utf-8', 0, consumableBytes);
-        for (const rawLine of text.split('\n')) {
-          if (rawLine) {
-            applyTranscriptLine(state, rawLine, st.mtimeMs);
-          }
-        }
-        state.offset += consumableBytes;
-      }
-
-      if (consumableBytes < bytesRead) {
-        const tailText = slice.toString('utf-8', consumableBytes, bytesRead).trim();
-        let tailComplete = false;
-        if (tailText.startsWith('{') && tailText.endsWith('}')) {
-          try {
-            JSON.parse(tailText);
-            tailComplete = true;
-          } catch {}
-        }
-        if (tailComplete) {
-          applyTranscriptLine(state, tailText, st.mtimeMs);
-          state.offset += bytesRead - consumableBytes;
-          consumableBytes = bytesRead;
-        } else if (nowMs - st.mtimeMs > 5000) {
-          state.offset += bytesRead - consumableBytes;
-          consumableBytes = bytesRead;
-        }
-      }
-
-      if (consumableBytes > 0) {
-        const sigLen = Math.min(SIG_BYTES, consumableBytes);
-        state.tailSig = Buffer.from(slice.subarray(consumableBytes - sigLen, consumableBytes));
-      }
+      const bytesRead = readSync(fd, chunk, 0, bytesToRead, readOffset);
+      slice = chunk.subarray(0, bytesRead);
     }
-
-    const fullyConsumed = state.offset >= st.size;
-    state.mtimeMs = fullyConsumed ? st.mtimeMs : 0;
-    state.size = state.offset;
-    if (!state.lastActiveMs) {
-      state.lastActiveMs = st.mtimeMs;
-    }
-
-    const cutoff = nowMs - RETENTION_MS;
-    if (state.entries.length > 0 && state.entries[0].ts < cutoff) {
-      let firstKeep = 0;
-      while (firstKeep < state.entries.length && state.entries[firstKeep].ts < cutoff) {
-        firstKeep++;
-      }
-      if (firstKeep > 0) {
-        state.entries = state.entries.slice(firstKeep);
-      }
-    }
-
-    state.contextBreakdown = buildContextBreakdown(state);
   } catch {
-    // Keep prior valid state if file is momentarily locked mid-rename on Windows
+    return;
   } finally {
     if (fd !== -1) {
-      try {
-        closeSync(fd);
-      } catch {}
+      closeSync(fd);
     }
   }
+
+  if (!canAppend) {
+    Object.assign(state, createConversationState(state.convId, state.filePath));
+  }
+
+  if (slice && slice.length > 0) {
+    const bytesRead = slice.length;
+    if (state.offset === 0) {
+      state.headSig = Buffer.from(slice.subarray(0, Math.min(SIG_BYTES, bytesRead)));
+    }
+
+    const lastNewline = slice.lastIndexOf(0x0a);
+    let consumableBytes = lastNewline !== -1 ? lastNewline + 1 : 0;
+
+    if (consumableBytes > 0) {
+      const text = slice.toString('utf-8', 0, consumableBytes);
+      for (const rawLine of text.split('\n')) {
+        if (rawLine) {
+          applyTranscriptLine(state, rawLine, st.mtimeMs);
+        }
+      }
+      state.offset += consumableBytes;
+    }
+
+    if (consumableBytes < bytesRead) {
+      const tailText = slice.toString('utf-8', consumableBytes, bytesRead).trim();
+      let tailComplete = false;
+      if (tailText.startsWith('{') && tailText.endsWith('}')) {
+        try {
+          JSON.parse(tailText);
+          tailComplete = true;
+        } catch {}
+      }
+      if (tailComplete) {
+        applyTranscriptLine(state, tailText, st.mtimeMs);
+        state.offset += bytesRead - consumableBytes;
+        consumableBytes = bytesRead;
+      } else if (nowMs - st.mtimeMs > 5000) {
+        state.offset += bytesRead - consumableBytes;
+        consumableBytes = bytesRead;
+      }
+    }
+
+    if (consumableBytes > 0) {
+      const sigLen = Math.min(SIG_BYTES, consumableBytes);
+      state.tailSig = Buffer.from(slice.subarray(consumableBytes - sigLen, consumableBytes));
+    }
+  }
+
+  const fullyConsumed = state.offset >= st.size;
+  state.mtimeMs = fullyConsumed ? st.mtimeMs : 0;
+  state.size = state.offset;
+  if (!state.lastActiveMs) {
+    state.lastActiveMs = st.mtimeMs;
+  }
+
+  const cutoff = nowMs - RETENTION_MS;
+  if (state.entries.length > 0 && state.entries[0].ts < cutoff) {
+    let firstKeep = 0;
+    while (firstKeep < state.entries.length && state.entries[firstKeep].ts < cutoff) {
+      firstKeep++;
+    }
+    if (firstKeep > 0) {
+      state.entries = state.entries.slice(firstKeep);
+    }
+  }
+
+  state.contextBreakdown = buildContextBreakdown(state);
 }
 
 export class UsageTracker {

@@ -125,11 +125,18 @@ test('SidecarApp HTTP integration enforces POST auth, serves immutable hashed as
     const wavBytes = await wavRes.arrayBuffer();
     assert.equal(wavBytes.byteLength, readFileSync(join(repoRoot, 'sidecars', 'pet_panel', 'nyaa.wav')).length);
 
-    const legacyGetRes = await fetch(`${baseUrl}/api/usage`);
-    assert.equal(legacyGetRes.status, 200);
-    const legacyGetJson = await legacyGetRes.json();
-    assert.deepEqual(legacyGetJson, { ok: true, reloadRequired: true, assetVersion: assetVer });
-    assert.equal(legacyGetJson.currentChat, undefined, 'unauthenticated GET exposes zero conversation data');
+    const legacyGetRes1 = await fetch(`${baseUrl}/api/usage`);
+    assert.equal(legacyGetRes1.status, 200);
+    const legacyGetJson1 = await legacyGetRes1.json();
+    const legacyGetJson2 = await (await fetch(`${baseUrl}/api/usage`)).json();
+    assert.equal(legacyGetJson1.ok, true);
+    assert.equal(legacyGetJson1.reloadRequired, undefined, 'no unread reloadRequired property on legacy GET');
+    assert.notEqual(
+      legacyGetJson1.assetVersion,
+      legacyGetJson2.assetVersion,
+      'changing assetVersion forces even freshly mounted pre-v0.8 iframes (loadedAssetVer=null) to reload on poll 2'
+    );
+    assert.equal(legacyGetJson1.currentChat, undefined, 'unauthenticated GET exposes zero conversation data');
 
     const unauthPost = await fetch(`${baseUrl}/api/usage`, {
       method: 'POST',
