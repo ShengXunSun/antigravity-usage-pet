@@ -102,12 +102,26 @@
   let lineIdx = 0;
   let currentPetKey = 'gemini';
   let currentPetUrl = '';
+  let loadedAssetVer = null;
+
+  if ($('reload-btn')) {
+    $('reload-btn').addEventListener('click', () => {
+      location.reload();
+    });
+  }
 
   function updatePetForModel(activeModel, assetVersion) {
+    if (assetVersion) {
+      if (loadedAssetVer !== null && loadedAssetVer !== assetVersion) {
+        location.reload();
+        return;
+      }
+      loadedAssetVer = assetVersion;
+    }
     const m = String(activeModel || '').toLowerCase();
     const nextKey = m.includes('claude') ? 'claude' : 'gemini';
-    const ver = assetVersion || 20;
-    const nextUrl = nextKey === 'claude' ? `/pet-claude.png?v=20&t=${ver}` : `/pet.png?v=20`;
+    const ver = assetVersion || 21;
+    const nextUrl = nextKey === 'claude' ? `/pet-claude.png?v=21&t=${ver}` : `/pet.png?v=21`;
     if (nextKey !== currentPetKey || nextUrl !== currentPetUrl) {
       const keyChanged = nextKey !== currentPetKey;
       currentPetKey = nextKey;

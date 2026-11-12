@@ -418,14 +418,14 @@ function computeUsageSummary(requestedConvId) {
 
 const app = new SidecarApp();
 
-app.page(
-  '/',
-  () =>
-    new Response(readFileSync(join(__dirname, 'index.html'), 'utf-8'), {
-      contentType: 'text/html',
-      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
-    })
-);
+const renderIndexPage = () =>
+  new Response(readFileSync(join(__dirname, 'index.html'), 'utf-8'), {
+    contentType: 'text/html',
+    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+  });
+
+app.page('/', renderIndexPage);
+app.page('/v21', renderIndexPage);
 
 for (const [route, [file, type]] of Object.entries(STATIC_TEXT)) {
   app.api(
