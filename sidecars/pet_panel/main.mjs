@@ -1,7 +1,8 @@
 /**
- * Gemini Usage Pet Sidecar Backend (v0.5)
- * Tracks live token usage (Last Reply, This Chat, Last 5h, This Week),
- * Input/Cache/Output breakdowns, and Current Chat Context Window usage + hover composition
+ * Gemini Usage Pet Sidecar Backend (v0.6)
+ * Tracks live token usage (Last Reply, This Chat, Daily 24h, This Week 7d),
+ * Weekly Input/Cache/Output breakdowns (with hover switch to This Chat This Week),
+ * and Current Chat Context Window usage + hover composition
  * across all Antigravity conversations in <appData>/brain/<convId>/.system_generated/logs/transcript.jsonl
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -182,13 +183,11 @@ function parseTranscriptFile(filePath) {
     const out = Number(obj.output_tokens) || 0;
 
     if (obj.type === 'CHECKPOINT') {
-      // Antigravity auto-compacted the conversation into a <CONTEXT_SUMMARY>
       const preCompactTotal = inp + cache + out;
       if (preCompactTotal > 0) {
         compactedFrom = preCompactTotal;
       }
       checkpointCount += 1;
-      // After compaction, previous messages & tool outputs are replaced by the summary (~out tokens)
       msgChars = Math.max(2000, out * 4);
       toolChars = 0;
       thinkingChars = 0;
@@ -228,7 +227,6 @@ function parseTranscriptFile(filePath) {
     };
   } else {
     const firstMsgTokens = Math.min(2000, Math.round(firstUserChars / 4));
-    // If auto-compacted, step right after CHECKPOINT has ~14.3k system + ~2.9k summary
     const rawSys = firstStepPromptTokens > 0 ? Math.max(4000, firstStepPromptTokens - firstMsgTokens) : 14500;
     const baseSys = checkpointCount > 0 ? Math.min(rawSys, 14300) : rawSys;
     const systemTokens = Math.min(totalCtx, baseSys);
@@ -305,10 +303,10 @@ function getConversationData(brainDir, convId) {
 
 function computeUsageSummary(requestedConvId) {
   const now = Date.now();
-  const fiveHoursAgo = now - 5 * 60 * 60 * 1000;
+  const oneDayAgo = now - 24 * 60 * 60 * 1000;
   const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-  const last5h = emptyBucket();
+  const daily = emptyBucket();
   const thisWeek = emptyBucket();
   const allTime = emptyBucket();
 
@@ -328,8 +326,8 @@ function computeUsageSummary(requestedConvId) {
         if (e.ts >= sevenDaysAgo) {
           addTokens(thisWeek, e.input, e.cache, e.output);
         }
-        if (e.ts >= fiveHoursAgo) {
-          addTokens(last5h, e.input, e.cache, e.output);
+        if (e.ts >= oneDayAgo) {
+          addTokens(daily, e.input, e.cache, e.output);
         }
       }
     }
@@ -346,18 +344,29 @@ function computeUsageSummary(requestedConvId) {
     activeRec = pool[0];
   }
 
+  // Compute this specific chat's token usage within This Week (7d)
+  const activeChatWeek = emptyBucket();
+  if (activeRec) {
+    for (const e of activeRec.entries) {
+      if (e.ts >= sevenDaysAgo) {
+        addTokens(activeChatWeek, e.input, e.cache, e.output);
+      }
+    }
+  }
+
   const activeModel = activeRec?.activeModel || '';
   const contextLimit = inferContextLimit(activeModel);
 
   return {
     ok: true,
-    version: '0.5.1 (v0.5)',
+    version: '0.6.0 (v0.6)',
     conversationId: activeRec ? activeRec.convId : requestedConvId || null,
     conversationCount: allConvs.length,
     currentChat: activeRec
       ? {
           convId: activeRec.convId,
           totals: activeRec.chatTotals,
+          weeklyTotals: activeChatWeek.total > 0 ? activeChatWeek : activeRec.chatTotals,
           lastTurn: activeRec.lastTurn,
           lastStep: activeRec.lastStep,
           activeModel,
@@ -370,6 +379,7 @@ function computeUsageSummary(requestedConvId) {
       : {
           convId: null,
           totals: emptyBucket(),
+          weeklyTotals: emptyBucket(),
           lastTurn: emptyBucket(),
           lastStep: emptyBucket(),
           activeModel: '',
@@ -388,7 +398,8 @@ function computeUsageSummary(requestedConvId) {
           },
           lastActiveMs: 0,
         },
-    last5h,
+    daily,
+    last5h: daily,
     thisWeek,
     allTime,
     updatedAt: new Date(now).toISOString(),

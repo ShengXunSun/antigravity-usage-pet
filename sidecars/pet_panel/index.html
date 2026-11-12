@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
   <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=15">
+  <link rel="stylesheet" href="/styles.css?v=16">
 </head>
 <body>
   <div class="container">
     <!-- Top Section: Live Token Usage Dashboard -->
     <div class="dashboard" id="dashboard">
-      <!-- Card 1: Overall Token Usage (This Week & Last 5 Hours) -->
+      <!-- Card 1: Overall Token Usage (This Week & Daily) -->
       <div class="usage-card">
         <div class="card-header">
           <div class="header-left">
@@ -29,57 +29,59 @@
           <div class="hero-metric">
             <span class="metric-label">This Week (7d)</span>
             <span class="metric-big accent" id="val-week">—</span>
-            <span class="metric-sub" id="sub-week">0 turns across 0 chats</span>
+            <span class="metric-sub" id="sub-week">0 replies across 0 chats</span>
           </div>
           <div class="hero-metric">
-            <span class="metric-label">Last 5 Hours</span>
+            <span class="metric-label">Daily (24h)</span>
             <span class="metric-big" id="val-5h">—</span>
-            <span class="metric-sub" id="sub-5h">0 turns in last 5h</span>
+            <span class="metric-sub" id="sub-5h">0 replies today</span>
           </div>
         </div>
       </div>
 
-      <!-- Card 2: Input, Cache, and Output Token Breakdown -->
-      <div class="usage-card">
+      <!-- Card 2: Weekly Input, Cache, and Output Token Breakdown (Hover for This Chat) -->
+      <div class="usage-card ico-card" id="ico-card">
         <div class="card-header">
-          <span class="title">Input · Cache · Output Tokens</span>
+          <div class="header-left">
+            <span class="title" id="ico-title">Weekly Input · Cache · Output Tokens</span>
+          </div>
           <span class="chat-id" id="cache-hit-badge">Cache: —%</span>
         </div>
 
         <!-- Input Tokens -->
-        <div class="token-row">
+        <div class="token-row ico-cell">
           <div class="token-row-top">
-            <span class="token-type">Input Tokens</span>
+            <span class="token-type" id="lbl-in-type">Input Tokens</span>
             <span class="token-main" id="tok-in-week">—</span>
           </div>
           <div class="token-bar-track">
             <div class="token-bar-fill" id="bar-in" style="width: 0%"></div>
           </div>
-          <div class="token-row-sub" id="sub-in">5h: — · Chat: — · Reply: —</div>
+          <div class="token-row-sub" id="sub-in">Daily: — · Chat: — · Reply: —</div>
         </div>
 
         <!-- Cache Read Tokens -->
-        <div class="token-row">
+        <div class="token-row ico-cell">
           <div class="token-row-top">
-            <span class="token-type">Cache Tokens</span>
+            <span class="token-type" id="lbl-cache-type">Cache Tokens</span>
             <span class="token-main accent-text" id="tok-cache-week">—</span>
           </div>
           <div class="token-bar-track">
             <div class="token-bar-fill" id="bar-cache" style="width: 0%"></div>
           </div>
-          <div class="token-row-sub" id="sub-cache">5h: — · Chat: — · Reply: —</div>
+          <div class="token-row-sub" id="sub-cache">Daily: — · Chat: — · Reply: —</div>
         </div>
 
         <!-- Output Tokens -->
-        <div class="token-row">
+        <div class="token-row ico-cell">
           <div class="token-row-top">
-            <span class="token-type">Output Tokens</span>
+            <span class="token-type" id="lbl-out-type">Output Tokens</span>
             <span class="token-main" id="tok-out-week">—</span>
           </div>
           <div class="token-bar-track">
             <div class="token-bar-fill" id="bar-out" style="width: 0%"></div>
           </div>
-          <div class="token-row-sub" id="sub-out">5h: — · Chat: — · Reply: —</div>
+          <div class="token-row-sub" id="sub-out">Daily: — · Chat: — · Reply: —</div>
         </div>
       </div>
 
@@ -149,10 +151,10 @@
         <div class="speech-line" id="speech-line">Click me to bounce, nya~ ✨</div>
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=15" alt="Gemini Pet" class="pet-img" draggable="false" />
+        <img src="/pet.png?v=16" alt="Gemini Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=15"></script>
+  <script src="/app.js?v=16"></script>
 </body>
 </html>

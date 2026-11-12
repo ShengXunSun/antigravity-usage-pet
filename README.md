@@ -8,13 +8,14 @@ It docks in Antigravity's Auxiliary Side Pane alongside your chat, displaying an
 
 ## ✨ Features
 
-- **Overall Token Usage (`This Week` & `Last 5 Hours`)**
+- **Overall Token Usage (`This Week` & `Daily`)**
   - Automatically scans Antigravity's local conversation transcripts (`transcript.jsonl`) using fast incremental `mtime`/size caching.
-  - Displays cumulative token totals and reply counts for the **Last 5 Hours** and **This Week (7 days)** across all chats (including subagents).
+  - Displays cumulative token totals and reply counts for **Daily (last 24 hours)** and **This Week (7 days)** across all chats (including subagents).
 
-- **Input · Cache · Output Token Breakdown**
+- **Weekly Input · Cache · Output Tokens (Hover for This Chat)**
   - Dedicated breakdown card for **Input Tokens**, **Cache Read Tokens**, and **Output Tokens**.
-  - Shows weekly token totals, percentage share bars, overall **Cache Hit Rate (`%`)**, and granular **`5h · Chat · Reply`** sub-metrics.
+  - **Default View**: Shows weekly token totals, percentage share bars, and **Cache Hit Rate (`%`)** across **all chats this week**, plus granular **`Daily · Chat · Reply`** sub-metrics.
+  - **Hover View**: Hover your mouse over the card or any of its cells to dynamically switch the main numbers, progress bars, and cache hit rate to **this specific chat's weekly token usage**.
 
 - **Chat Context Window Meter + 4-Way Hover Breakdown (`v0.5`)**
   - **Live Context Meter**: Shows the exact number of tokens currently occupying your active chat's context window (`input_tokens + cache_read_tokens + output_tokens` of the latest model step).

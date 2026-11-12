@@ -60,6 +60,24 @@ body {
   gap: 5px;
 }
 
+.ico-card {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ico-card:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.16);
+}
+
+.ico-cell {
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.ico-cell:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(15, 23, 42, 0.72);
+}
+
 .ctx-card {
   position: relative;
   cursor: pointer;

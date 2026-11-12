@@ -92,8 +92,10 @@
   const dashboard = $('dashboard');
   const pinBtn = $('pin-btn');
   const ctxCapBtn = $('ctx-cap-btn');
+  const icoCard = $('ico-card');
 
   let isPinned = true;
+  let isHoveringIco = false;
   let lastSeenChatTotal = null;
   let latestData = null;
   let lineIdx = 0;
@@ -179,6 +181,57 @@
     $('tip-think').textContent = `${bd.thinkingPct}% (${fmtTokens(bd.thinkingTokens)})`;
   }
 
+  function renderIcoCard(data) {
+    if (!data) return;
+    const lastTurn = data.currentChat?.lastTurn || { input: 0, cache: 0, output: 0, total: 0 };
+    const chatTotals = data.currentChat?.totals || { input: 0, cache: 0, output: 0, total: 0 };
+    const chatWeek = data.currentChat?.weeklyTotals || chatTotals;
+    const daily = data.daily || data.last5h || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
+    const week = data.thisWeek || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
+
+    const activeSource = isHoveringIco ? chatWeek : week;
+    const totalActive = Math.max(1, activeSource.total);
+
+    const inPct = Math.min(100, Math.round((activeSource.input / totalActive) * 100));
+    const cachePct = Math.min(100, Math.round((activeSource.cache / totalActive) * 100));
+    const realOutPct = Math.round((activeSource.output / totalActive) * 100);
+    const outBarPct = Math.min(100, Math.max(activeSource.output > 0 ? 2 : 0, realOutPct));
+
+    if ($('ico-title')) {
+      $('ico-title').textContent = isHoveringIco
+        ? 'This Chat (Weekly) · Input · Cache · Output'
+        : 'Weekly Input · Cache · Output Tokens';
+    }
+    if ($('lbl-in-type')) $('lbl-in-type').textContent = isHoveringIco ? 'Input (This Chat)' : 'Input Tokens';
+    if ($('lbl-cache-type')) $('lbl-cache-type').textContent = isHoveringIco ? 'Cache (This Chat)' : 'Cache Tokens';
+    if ($('lbl-out-type')) $('lbl-out-type').textContent = isHoveringIco ? 'Output (This Chat)' : 'Output Tokens';
+
+    $('cache-hit-badge').textContent = `Cache: ${cachePct}%`;
+
+    $('tok-in-week').textContent = `${fmtTokens(activeSource.input)} (${inPct}%)`;
+    $('bar-in').style.width = `${inPct}%`;
+    $('sub-in').textContent = `Daily: ${fmtTokens(daily.input)} · Chat: ${fmtTokens(chatTotals.input)} · Reply: ${fmtTokens(lastTurn.input)}`;
+
+    $('tok-cache-week').textContent = `${fmtTokens(activeSource.cache)} (${cachePct}%)`;
+    $('bar-cache').style.width = `${cachePct}%`;
+    $('sub-cache').textContent = `Daily: ${fmtTokens(daily.cache)} · Chat: ${fmtTokens(chatTotals.cache)} · Reply: ${fmtTokens(lastTurn.cache)}`;
+
+    $('tok-out-week').textContent = `${fmtTokens(activeSource.output)} (${realOutPct}%)`;
+    $('bar-out').style.width = `${outBarPct}%`;
+    $('sub-out').textContent = `Daily: ${fmtTokens(daily.output)} · Chat: ${fmtTokens(chatTotals.output)} · Reply: ${fmtTokens(lastTurn.output)}`;
+  }
+
+  if (icoCard) {
+    icoCard.addEventListener('mouseenter', () => {
+      isHoveringIco = true;
+      if (latestData) renderIcoCard(latestData);
+    });
+    icoCard.addEventListener('mouseleave', () => {
+      isHoveringIco = false;
+      if (latestData) renderIcoCard(latestData);
+    });
+  }
+
   if (ctxCapBtn) {
     ctxCapBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -240,40 +293,22 @@
 
       const lastTurn = data.currentChat?.lastTurn || { input: 0, cache: 0, output: 0, total: 0 };
       const chatTotals = data.currentChat?.totals || { input: 0, cache: 0, output: 0, total: 0 };
-      const last5h = data.last5h || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
+      const daily = data.daily || data.last5h || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
       const week = data.thisWeek || { input: 0, cache: 0, output: 0, total: 0, steps: 0 };
 
       // Pet speech bubble live chat pill
       $('val-last-reply').textContent = fmtTokens(lastTurn.total);
       $('val-chat-total').textContent = fmtTokens(chatTotals.total);
 
-      // Card 1: Overall Token Usage
+      // Card 1: Overall Token Usage (This Week & Daily)
       $('val-week').textContent = fmtTokens(week.total);
       $('sub-week').textContent = `${week.steps || 0} replies across ${data.conversationCount || 0} chats`;
 
-      $('val-5h').textContent = fmtTokens(last5h.total);
-      $('sub-5h').textContent = `${last5h.steps || 0} replies in last 5h`;
+      $('val-5h').textContent = fmtTokens(daily.total);
+      $('sub-5h').textContent = `${daily.steps || 0} replies today`;
 
-      // Card 2: Input, Cache, Output Breakdown
-      const totalWeek = Math.max(1, week.total);
-      const inPct = Math.min(100, Math.round((week.input / totalWeek) * 100));
-      const cachePct = Math.min(100, Math.round((week.cache / totalWeek) * 100));
-      const outPct = Math.min(100, Math.max(2, Math.round((week.output / totalWeek) * 100)));
-
-      $('cache-hit-badge').textContent = `Cache: ${cachePct}%`;
-
-      $('tok-in-week').textContent = `${fmtTokens(week.input)} (${inPct}%)`;
-      $('bar-in').style.width = `${inPct}%`;
-      $('sub-in').textContent = `5h: ${fmtTokens(last5h.input)} · Chat: ${fmtTokens(chatTotals.input)} · Reply: ${fmtTokens(lastTurn.input)}`;
-
-      $('tok-cache-week').textContent = `${fmtTokens(week.cache)} (${cachePct}%)`;
-      $('bar-cache').style.width = `${cachePct}%`;
-      $('sub-cache').textContent = `5h: ${fmtTokens(last5h.cache)} · Chat: ${fmtTokens(chatTotals.cache)} · Reply: ${fmtTokens(lastTurn.cache)}`;
-
-      const realOutPct = Math.round((week.output / totalWeek) * 100);
-      $('tok-out-week').textContent = `${fmtTokens(week.output)} (${realOutPct}%)`;
-      $('bar-out').style.width = `${outPct}%`;
-      $('sub-out').textContent = `5h: ${fmtTokens(last5h.output)} · Chat: ${fmtTokens(chatTotals.output)} · Reply: ${fmtTokens(lastTurn.output)}`;
+      // Card 2: Weekly Input, Cache, Output Breakdown (Hover switches to This Chat This Week)
+      renderIcoCard(data);
 
       // Card 3: Current Chat Context Window + Hover Composition
       renderContextWindow(data.currentChat);
