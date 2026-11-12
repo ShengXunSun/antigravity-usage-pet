@@ -5,7 +5,7 @@ import { basename, dirname, join } from 'node:path';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
 const RETENTION_MS = 8 * ONE_DAY_MS;
-const HEAD_SIG_BYTES = 64;
+const SIG_BYTES = 64;
 
 const SETTINGS_BLOCK_RE = /<USER_SETTINGS_CHANGE>([\s\S]*?)<\/USER_SETTINGS_CHANGE>/gi;
 const MODEL_CHANGE_RE = /changed setting `Model Selection` from [^\r\n]+? to ([^\r\n]+?)\.\s*No need/gi;
@@ -187,6 +187,7 @@ function createConversationState(convId, filePath) {
     size: 0,
     offset: 0,
     headSig: Buffer.alloc(0),
+    tailSig: Buffer.alloc(0),
     seenAnyStep: false,
     isSubagent: false,
     chatTotals: emptyBucket(),
@@ -363,9 +364,17 @@ function readIncrementalTranscript(state, st, nowMs) {
 
     let canAppend = state.offset > 0 && st.size >= state.offset;
     if (canAppend && state.headSig.length > 0) {
-      const checkBuf = Buffer.alloc(state.headSig.length);
-      const nHead = readSync(fd, checkBuf, 0, checkBuf.length, 0);
-      if (nHead !== state.headSig.length || !checkBuf.equals(state.headSig)) {
+      const checkHead = Buffer.allocUnsafe(state.headSig.length);
+      const nHead = readSync(fd, checkHead, 0, checkHead.length, 0);
+      if (nHead !== state.headSig.length || !checkHead.equals(state.headSig)) {
+        canAppend = false;
+      }
+    }
+    if (canAppend && state.tailSig.length > 0) {
+      const checkTail = Buffer.allocUnsafe(state.tailSig.length);
+      const tailPos = state.offset - state.tailSig.length;
+      const nTail = readSync(fd, checkTail, 0, checkTail.length, tailPos);
+      if (nTail !== state.tailSig.length || !checkTail.equals(state.tailSig)) {
         canAppend = false;
       }
     }
@@ -380,7 +389,7 @@ function readIncrementalTranscript(state, st, nowMs) {
       const chunk = Buffer.allocUnsafe(bytesToRead);
       const bytesRead = readSync(fd, chunk, 0, bytesToRead, state.offset);
       if (state.offset === 0 && bytesRead > 0) {
-        state.headSig = Buffer.from(chunk.subarray(0, Math.min(HEAD_SIG_BYTES, bytesRead)));
+        state.headSig = Buffer.from(chunk.subarray(0, Math.min(SIG_BYTES, bytesRead)));
       }
 
       const slice = chunk.subarray(0, bytesRead);
@@ -414,6 +423,11 @@ function readIncrementalTranscript(state, st, nowMs) {
           state.offset += bytesRead - consumableBytes;
           consumableBytes = bytesRead;
         }
+      }
+
+      if (consumableBytes > 0) {
+        const sigLen = Math.min(SIG_BYTES, consumableBytes);
+        state.tailSig = Buffer.from(slice.subarray(consumableBytes - sigLen, consumableBytes));
       }
     }
 
