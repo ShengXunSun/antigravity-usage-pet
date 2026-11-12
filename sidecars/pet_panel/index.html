@@ -4,14 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gemini Pet</title>
-  <script src="/preload.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=21">
+  <link rel="stylesheet" href="/styles.css?v=__ASSET_VER__">
 </head>
 <body>
   <div class="container">
-    <!-- Top Section: Live Token Usage Dashboard -->
     <div class="dashboard" id="dashboard">
-      <!-- Card 1: Overall Token Usage (This Week & Daily) -->
       <div class="usage-card">
         <div class="card-header">
           <div class="header-left">
@@ -34,22 +31,20 @@
           </div>
           <div class="hero-metric">
             <span class="metric-label">Daily (24h)</span>
-            <span class="metric-big" id="val-5h">—</span>
-            <span class="metric-sub" id="sub-5h">0 replies today</span>
+            <span class="metric-big" id="val-daily">—</span>
+            <span class="metric-sub" id="sub-daily">0 replies today</span>
           </div>
         </div>
       </div>
 
-      <!-- Card 2: Weekly Input, Cache, and Output Token Breakdown (Hover for This Chat) -->
       <div class="usage-card ico-card" id="ico-card">
         <div class="card-header">
           <div class="header-left">
             <span class="title" id="ico-title">Weekly Input · Cache · Output Tokens</span>
           </div>
-          <span class="chat-id" id="cache-hit-badge">Cache: —%</span>
+          <span class="chat-id" id="cache-hit-badge">Cache Hit: —%</span>
         </div>
 
-        <!-- Input Tokens -->
         <div class="token-row ico-cell">
           <div class="token-row-top">
             <span class="token-type" id="lbl-in-type">Input Tokens</span>
@@ -61,7 +56,6 @@
           <div class="token-row-sub" id="sub-in">Daily: — · Chat: — · Reply: —</div>
         </div>
 
-        <!-- Cache Read Tokens -->
         <div class="token-row ico-cell">
           <div class="token-row-top">
             <span class="token-type" id="lbl-cache-type">Cache Tokens</span>
@@ -73,7 +67,6 @@
           <div class="token-row-sub" id="sub-cache">Daily: — · Chat: — · Reply: —</div>
         </div>
 
-        <!-- Output Tokens -->
         <div class="token-row ico-cell">
           <div class="token-row-top">
             <span class="token-type" id="lbl-out-type">Output Tokens</span>
@@ -86,20 +79,19 @@
         </div>
       </div>
 
-      <!-- Card 3: Current Chat Context Window (Hover for % Breakdown) -->
-      <div class="usage-card ctx-card" id="ctx-card">
+      <div class="usage-card ctx-card" id="ctx-card" tabindex="0" aria-describedby="ctx-tooltip">
         <div class="card-header">
           <div class="header-left">
             <span class="title">Chat Context Window</span>
-            <span class="chat-id">Hover for %</span>
+            <span class="chat-id">Hover / click for %</span>
           </div>
-          <button type="button" class="pin-btn" id="ctx-cap-btn" title="Click to switch context window cap (200k / 1M)">Cap: 200k ⇄</button>
+          <button type="button" class="pin-btn" id="ctx-cap-btn" title="Click to switch context window cap (200k / 1M)">Cap: 1M ⇄</button>
         </div>
 
         <div class="token-row">
           <div class="token-row-top">
             <span class="token-type" id="ctx-status-label">Active Context Size</span>
-            <span class="token-main accent-text" id="val-ctx-window">— / 200k (0%)</span>
+            <span class="token-main accent-text" id="val-ctx-window">— / 1M (0%)</span>
           </div>
           <div class="token-bar-track ctx-track">
             <div class="token-bar-fill" id="bar-ctx" style="width: 0%"></div>
@@ -107,41 +99,39 @@
           <div class="token-row-sub" id="sub-ctx">Cached: — · New In: — · Out: —</div>
         </div>
 
-        <!-- Hover Tooltip showing Context Composition (%) -->
-        <div class="ctx-tooltip" id="ctx-tooltip">
+        <div class="ctx-tooltip" id="ctx-tooltip" role="tooltip">
           <div class="tooltip-header">
             <span class="tooltip-title">Context Window Composition</span>
             <span class="tooltip-total" id="tip-ctx-total">—</span>
           </div>
           <div class="seg-bar">
-            <div class="seg seg-tools" id="seg-tools" style="width: 50%"></div>
-            <div class="seg seg-msgs" id="seg-msgs" style="width: 20%"></div>
-            <div class="seg seg-sys" id="seg-sys" style="width: 20%"></div>
-            <div class="seg seg-think" id="seg-think" style="width: 10%"></div>
+            <div class="seg seg-tools" id="seg-tools" style="width: 0%"></div>
+            <div class="seg seg-msgs" id="seg-msgs" style="width: 0%"></div>
+            <div class="seg seg-sys" id="seg-sys" style="width: 0%"></div>
+            <div class="seg seg-think" id="seg-think" style="width: 0%"></div>
           </div>
           <div class="tooltip-grid">
             <div class="tip-row">
               <span class="tip-label"><span class="dot dot-tools"></span>Tools &amp; Outputs</span>
-              <span class="tip-val" id="tip-tools">—% (—)</span>
+              <span class="tip-val" id="tip-tools">0% (0)</span>
             </div>
             <div class="tip-row">
               <span class="tip-label"><span class="dot dot-msgs"></span>Chat Messages</span>
-              <span class="tip-val" id="tip-msgs">—% (—)</span>
+              <span class="tip-val" id="tip-msgs">0% (0)</span>
             </div>
             <div class="tip-row">
               <span class="tip-label"><span class="dot dot-sys"></span>System &amp; Skills</span>
-              <span class="tip-val" id="tip-sys">—% (—)</span>
+              <span class="tip-val" id="tip-sys">0% (0)</span>
             </div>
             <div class="tip-row">
               <span class="tip-label"><span class="dot dot-think"></span>Model Thinking</span>
-              <span class="tip-val" id="tip-think">—% (—)</span>
+              <span class="tip-val" id="tip-think">0% (0)</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Section: Gemini Pet Stage + Live Current Chat Badge on Pet -->
     <div class="pet-stage" id="pet-stage" title="Click me!">
       <div class="speech-bubble" id="speech-bubble">
         <div class="chat-live-pill">
@@ -152,10 +142,10 @@
         <div class="speech-line" id="speech-line">Click me to bounce, nya~ ✨</div>
       </div>
       <div class="pet-avatar" id="pet-avatar">
-        <img src="/pet.png?v=21" id="pet-img" alt="AI Pet" class="pet-img" draggable="false" />
+        <img id="pet-img" alt="AI Pet" class="pet-img" draggable="false" />
       </div>
     </div>
   </div>
-  <script src="/app.js?v=21"></script>
+  <script src="/app.js?v=__ASSET_VER__" data-asset-ver="__ASSET_VER__"></script>
 </body>
 </html>

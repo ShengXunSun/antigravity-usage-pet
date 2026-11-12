@@ -14,13 +14,14 @@
   padding: 0;
 }
 
+html,
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--fg);
-  padding: 6px 10px;
   height: 100vh;
   overflow-x: hidden;
+  overflow-y: auto;
   user-select: none;
 }
 
@@ -30,8 +31,9 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 5px;
+  padding: 6px 10px;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   margin: 0 auto;
 }
 
@@ -40,13 +42,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
 .dashboard.collapsed {
-  opacity: 0;
-  transform: translateY(10px) scale(0.98);
-  pointer-events: none;
+  display: none;
 }
 
 .usage-card {
@@ -81,12 +80,20 @@ body {
 .ctx-card {
   position: relative;
   cursor: pointer;
+  outline: none;
+}
+
+.ctx-card:focus-visible {
+  border-color: rgba(56, 189, 248, 0.85);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
 }
 
 .card-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 4px 6px;
   border-bottom: 1px solid rgba(56, 189, 248, 0.2);
   padding-bottom: 4px;
 }
@@ -95,12 +102,14 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
 }
 
 .live-dot {
   width: 7px;
   height: 7px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: #38bdf8;
   box-shadow: 0 0 8px #38bdf8;
@@ -111,6 +120,7 @@ body {
   font-size: 11.5px;
   letter-spacing: 0.01em;
   color: #ffffff;
+  white-space: nowrap;
 }
 
 .chat-id {
@@ -119,6 +129,7 @@ body {
   background: rgba(56, 189, 248, 0.16);
   padding: 1px 6px;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .badge {
@@ -128,6 +139,7 @@ body {
   border-radius: 999px;
   background: rgba(56, 189, 248, 0.22);
   color: #38bdf8;
+  white-space: nowrap;
 }
 
 .pin-btn {
@@ -139,6 +151,7 @@ body {
   padding: 1px 7px;
   border-radius: 999px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
@@ -162,6 +175,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
 
 .metric-label {
@@ -192,7 +206,6 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Input / Cache / Output & Context Window Rows */
 .token-row {
   display: flex;
   flex-direction: column;
@@ -247,7 +260,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Context Composition Hover Tooltip */
 .ctx-tooltip {
   position: absolute;
   left: 0;
@@ -268,7 +280,16 @@ body {
   gap: 6px;
 }
 
-.ctx-card:hover .ctx-tooltip {
+@media (max-height: 580px) {
+  .ctx-tooltip {
+    top: auto;
+    bottom: calc(100% + 6px);
+  }
+}
+
+.ctx-card:hover .ctx-tooltip,
+.ctx-card:focus-within .ctx-tooltip,
+.ctx-card.tooltip-pinned .ctx-tooltip {
   opacity: 1;
   transform: translateY(0);
 }
@@ -353,10 +374,9 @@ body {
 .dot-sys   { background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, 0.6); }
 .dot-think { background: #f43f5e; box-shadow: 0 0 6px rgba(244, 63, 94, 0.6); }
 
-/* Bottom Pet Stage (margin-bottom: 10vh, no idle float, springy jellyBounce on click) */
 .pet-stage {
   margin-top: auto;
-  margin-bottom: 10vh;
+  margin-bottom: min(10vh, max(6px, calc(100vh - 660px)));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -364,6 +384,10 @@ body {
   cursor: pointer;
   padding: 2px 0;
   width: 100%;
+}
+
+.dashboard.collapsed ~ .pet-stage {
+  margin-bottom: 10vh;
 }
 
 .speech-bubble {
@@ -405,12 +429,20 @@ body {
 }
 
 .pet-img {
-  height: 40vh;
+  height: clamp(120px, calc(100vh - 405px), 40vh);
   width: auto;
   max-width: 96vw;
   object-fit: contain;
   display: block;
   transform-origin: bottom center;
+}
+
+.dashboard.collapsed ~ .pet-stage .pet-img {
+  height: 40vh;
+}
+
+.pet-img:not([src]) {
+  opacity: 0;
 }
 
 .pet-avatar.bounce .pet-img {
