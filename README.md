@@ -1,60 +1,47 @@
-# Antigravity Gemini Usage Pet (`whale-pet`)
+# Antigravity Gemini usage pet
 
-An interactive side-panel desktop pet plugin for **Google Antigravity** inspired by [`DeepSeek-Balance-Whale-Widget`](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget).
+`whale-pet` runs a local Node.js panel inside the Google Antigravity auxiliary side pane. It reads local `transcript.jsonl` files from your Antigravity `brain` directories and displays token usage, context window size, and an interactive mascot for Gemini and Claude models. All accounting runs locally in JavaScript and spends zero model tokens.
 
-It docks in Antigravity's Auxiliary Side Pane alongside your chat, displaying an interactive **Gemini Mascot Pet** that tracks your real-time token usage and active context window across conversations with zero AI token overhead.
-
----
-
-## ✨ Features
-
-- **Overall Token Usage (`This Week` & `Daily`)**
-  - Automatically scans Antigravity's local conversation transcripts (`transcript.jsonl`) using fast incremental `mtime`/size caching.
-  - Displays cumulative token totals and reply counts for **Daily (last 24 hours)** and **This Week (7 days)** across all chats (including subagents).
-
-- **Weekly Input · Cache · Output Tokens (Hover for This Chat)**
-  - Dedicated breakdown card for **Input Tokens**, **Cache Read Tokens**, and **Output Tokens**.
-  - **Default View**: Shows weekly token totals, percentage share bars, and **Cache Hit Rate (`%`)** across **all chats this week**, plus granular **`Daily · Chat · Reply`** sub-metrics.
-  - **Hover View**: Hover your mouse over the card or any of its cells to dynamically switch the main numbers, progress bars, and cache hit rate to **this specific chat's weekly token usage**.
-
-- **Chat Context Window Meter + 4-Way Hover Breakdown (`v0.5`)**
-  - **Live Context Meter**: Shows the exact number of tokens currently occupying your active chat's context window (`input_tokens + cache_read_tokens + output_tokens` of the latest model step).
-  - **Switchable `Cap: 200k ⇄ 1M`**: Click to toggle between `200k` (Claude / GPT) and `1M` (Gemini) context caps, with automatic model detection.
-  - **Auto-Compaction Detection**: Detects Antigravity `CHECKPOINT` auto-compaction events and displays `Auto-compacted @ Xk` when your chat history is summarized.
-  - **Hover Composition Tooltip (Zero Token Cost)**: Hover your mouse over the **Chat Context Window** card to inspect a 4-color segmented bar and exact percentage/token breakdown calculated 100% in local JavaScript:
-    - 🔵 **Tools & Outputs** (`#38bdf8`) — Tool call arguments, file reads, and command outputs.
-    - 🟢 **Chat Messages** (`#34d399`) — User prompts, assistant replies, and compacted summaries.
-    - 🟡 **System & Skills** (`#fbbf24`) — System instructions, rules, and skill declarations.
-    - 🔴 **Model Thinking** (`#f43f5e`) — Internal reasoning blocks.
-
-- **Live Current Chat Badge on the Pet**
-  - The speech bubble right above the Gemini Pet's head displays your active conversation's **`Last Reply`** tokens and **`This Chat`** cumulative total in real time.
-  - Automatically reacts with a bounce and updated breakdown whenever a new reply finishes.
-
-- **Dynamic Model-Aware Pet Avatar (`Gemini` ⇄ `Claude`) & Sound Effect**
-  - **Auto-Swapping Mascot**: Automatically detects the active model from your conversation settings (`transcript.jsonl`) and switches between the **Gemini Pet** (`pet.png`) and the **Claude Pet** (`pet-claude.png`), while also syncing the default context window cap (`1M` for Gemini vs `200k` for Claude).
-  - **Springy Click Bounce**: Clicking the pet triggers a `jellyBounce` squash-and-stretch animation and cycles through token summary lines.
-  - **Single-Track `Nyaa` Audio**: Plays `nyaa.wav` via the Web Audio API (`AudioContext` + `AudioBufferSourceNode`). Rapid clicks immediately terminate the previous sound and restart from `0.00s` so tracks never overlap.
-  - **`📌 Pinned / Unpinned` Toggle**: Keep the top usage cards pinned open while clicking the pet, or unpin them so clicking the pet toggles the dashboard open and closed.
-
----
-
-## 📦 Installation
+## Install the plugin
 
 Clone this repository into your global Antigravity plugins directory:
 
-```powershell
-git clone https://github.com/ShengXunSun/antigravity-usage-pet.git "$env:USERPROFILE\.gemini\config\plugins\whale-pet"
-```
+	git clone https://github.com/ShengXunSun/antigravity-usage-pet.git "$env:USERPROFILE\.gemini\config\plugins\whale-pet"
 
----
+## Dashboard cards and controls
 
-## 🏷️ Git Version Checkpoints
+`sidecars/pet_panel/main.mjs` serves the panel on `127.0.0.1` and authenticates live `POST /api/usage` polls with `X-Sidecar-Token`. `sidecars/pet_panel/tracker.mjs` reads appended bytes from each `transcript.jsonl` file by byte offset and checks 64-byte head and tail signatures before advancing.
 
-Each development milestone is tagged so you can roll back at any time:
+- **Overall token usage.** Shows token totals and user-turn reply counts for **Daily** over 24 hours and **This Week** over 7 days, including subagent logs. Click **Pinned** or **Unpinned** to control whether mascot clicks collapse the cards.
+- **Weekly input, cache, and output tokens.** Shows 7-day totals, share bars, and prompt **Cache Hit** rate computed as `cache / (input + cache)`. Each column lists **Daily**, **Chat**, and **Reply** sub-totals. Hover the card to inspect 7-day input, cache, and output totals for the active chat.
+- **Chat context window.** Displays the active context size from the latest model step, or the post-compaction estimate after a `CHECKPOINT` event. Click **Cap** to switch between `200k` and `1M` limits for the active model family. Hover or click the card to pin a four-part composition bar with Hamilton largest-remainder percentages:
+  - **Tools & Outputs** in `#38bdf8` estimates tool call arguments and outputs.
+  - **Chat Messages** in `#34d399` estimates user prompts, model replies, and checkpoint summaries.
+  - **System & Skills** in `#fbbf24` estimates system instructions and skill declarations from the first model step.
+  - **Model Thinking** in `#f43f5e` estimates model reasoning blocks.
+- **Model mascot and audio.** Switches between `sidecars/pet_panel/pet.png` for Gemini chats and `sidecars/pet_panel/pet-claude.png` for Claude chats using `<USER_SETTINGS_CHANGE>` entries in the active transcript. Click the mascot to trigger `jellyBounce`, cycle summary lines, and play `sidecars/pet_panel/nyaa.wav` from `0.00s` without track overlap.
 
-- `v0.1-base` — Initial side-panel plugin skeleton & HD dark-mode Gemini Pet sprite.
-- `v0.2-tracker` — Incremental transcript token reader (`Last Reply`, `This Chat`, `Last 5h`, `This Week`).
-- `v0.3-pet-ui` — Dedicated `Input · Cache · Output` token breakdown card & `📌 Pinned` toggle mode.
-- `v0.4-sound` — Extracted `nyaa.wav` sound effect with single-track zero-overlap Web Audio playback.
-- `v0.5` / `v0.5-context-window` — Live `Chat Context Window` meter (`200k ⇄ 1M` cap), auto-compaction detection, and 4-color hover composition breakdown tooltip.
+## Run tests and benchmarks
+
+Run the 11 unit and HTTP integration tests across `test/tracker.test.mjs` and `test/server.test.mjs`:
+
+	node --test
+
+Run the 7-trial interleaved A and B benchmark against `v0.7-save`:
+
+	node scripts/bench.mjs
+
+Run the lossless PNG and WAV asset optimizer:
+
+	node scripts/optimize-assets.mjs
+
+## Version tags
+
+- `v0.1-base` adds the initial sidecar panel and dark-mode Gemini mascot sprite.
+- `v0.2-tracker` adds transcript token scanning across recent time windows.
+- `v0.3-pet-ui` adds the input, cache, and output breakdown card and pin toggle.
+- `v0.4-sound` adds single-track Web Audio playback for `nyaa.wav`.
+- `v0.5` and `v0.5-context-window` add the context window meter, compaction badge, and four-color breakdown tooltip.
+- `v0.6` and `v0.7` add automatic Claude mascot switching and updated Claude sprite artwork.
+- `v0.7-save` marks the pre-optimization checkpoint before the `v0.8` audit pass.
+- `v0.8` adds byte-offset `UsageTracker` parsing, `POST /api/usage` token authentication, immutable hashed asset caching, lossless asset compression, responsive pane sizing, and the `node:test` and `bench.mjs` suites.
