@@ -354,7 +354,14 @@ function computeUsageSummary(requestedConvId) {
     }
   }
 
-  const activeModel = activeRec?.activeModel || '';
+  let activeModel = activeRec?.activeModel || '';
+  if (!activeModel && allConvs.length > 0) {
+    const withModel = allConvs.filter((c) => c.activeModel);
+    if (withModel.length > 0) {
+      withModel.sort((a, b) => b.lastActiveMs - a.lastActiveMs);
+      activeModel = withModel[0].activeModel;
+    }
+  }
   const contextLimit = inferContextLimit(activeModel);
 
   return {
@@ -426,6 +433,16 @@ app.api(
   '/pet.png',
   () =>
     new Response(readFileSync(join(__dirname, 'pet.png')), {
+      contentType: 'image/png',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+    }),
+  'GET'
+);
+
+app.api(
+  '/pet-claude.png',
+  () =>
+    new Response(readFileSync(join(__dirname, 'pet-claude.png')), {
       contentType: 'image/png',
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
     }),

@@ -31,7 +31,8 @@ It docks in Antigravity's Auxiliary Side Pane alongside your chat, displaying an
   - The speech bubble right above the Gemini Pet's head displays your active conversation's **`Last Reply`** tokens and **`This Chat`** cumulative total in real time.
   - Automatically reacts with a bounce and updated breakdown whenever a new reply finishes.
 
-- **Interactive Gemini Pet & Zero-Overlap Sound Effect**
+- **Dynamic Model-Aware Pet Avatar (`Gemini` ⇄ `Claude`) & Sound Effect**
+  - **Auto-Swapping Mascot**: Automatically detects the active model from your conversation settings (`transcript.jsonl`) and switches between the **Gemini Pet** (`pet.png`) and the **Claude Pet** (`pet-claude.png`), while also syncing the default context window cap (`1M` for Gemini vs `200k` for Claude).
   - **Springy Click Bounce**: Clicking the pet triggers a `jellyBounce` squash-and-stretch animation and cycles through token summary lines.
   - **Single-Track `Nyaa` Audio**: Plays `nyaa.wav` via the Web Audio API (`AudioContext` + `AudioBufferSourceNode`). Rapid clicks immediately terminate the previous sound and restart from `0.00s` so tracks never overlap.
   - **`📌 Pinned / Unpinned` Toggle**: Keep the top usage cards pinned open while clicking the pet, or unpin them so clicking the pet toggles the dashboard open and closed.

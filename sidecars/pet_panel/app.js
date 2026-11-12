@@ -88,6 +88,7 @@
 
   const stage = $('pet-stage');
   const avatar = $('pet-avatar');
+  const petImg = $('pet-img') || document.querySelector('.pet-img');
   const speechLine = $('speech-line');
   const dashboard = $('dashboard');
   const pinBtn = $('pin-btn');
@@ -99,6 +100,25 @@
   let lastSeenChatTotal = null;
   let latestData = null;
   let lineIdx = 0;
+  let currentPetKey = 'gemini';
+
+  function updatePetForModel(activeModel) {
+    const m = String(activeModel || '').toLowerCase();
+    const nextKey = m.includes('claude') ? 'claude' : 'gemini';
+    if (nextKey !== currentPetKey) {
+      const prevKey = currentPetKey;
+      currentPetKey = nextKey;
+      if (petImg) {
+        petImg.src = nextKey === 'claude' ? '/pet-claude.png?v=17' : '/pet.png?v=17';
+      }
+      // Auto-sync context window cap when switching model families
+      ctxCapIdx = nextKey === 'claude' ? 0 : 1;
+      userChoseCap = false;
+      if (prevKey) {
+        triggerBounce();
+      }
+    }
+  }
 
   // Context window cap options: 200k (Claude/GPT/standard) or 1M (Gemini)
   const CTX_CAPS = [200_000, 1_000_000];
@@ -306,6 +326,9 @@
 
       $('val-5h').textContent = fmtTokens(daily.total);
       $('sub-5h').textContent = `${daily.steps || 0} replies today`;
+
+      // Switch pet image if active model changed (Gemini <-> Claude)
+      updatePetForModel(data.currentChat?.activeModel);
 
       // Card 2: Weekly Input, Cache, Output Breakdown (Hover switches to This Chat This Week)
       renderIcoCard(data);
