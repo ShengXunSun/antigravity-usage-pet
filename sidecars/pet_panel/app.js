@@ -101,20 +101,23 @@
   let latestData = null;
   let lineIdx = 0;
   let currentPetKey = 'gemini';
+  let currentPetUrl = '';
 
-  function updatePetForModel(activeModel) {
+  function updatePetForModel(activeModel, assetVersion) {
     const m = String(activeModel || '').toLowerCase();
     const nextKey = m.includes('claude') ? 'claude' : 'gemini';
-    if (nextKey !== currentPetKey) {
-      const prevKey = currentPetKey;
+    const ver = assetVersion || 20;
+    const nextUrl = nextKey === 'claude' ? `/pet-claude.png?v=20&t=${ver}` : `/pet.png?v=20`;
+    if (nextKey !== currentPetKey || nextUrl !== currentPetUrl) {
+      const keyChanged = nextKey !== currentPetKey;
       currentPetKey = nextKey;
+      currentPetUrl = nextUrl;
       if (petImg) {
-        petImg.src = nextKey === 'claude' ? '/pet-claude.png?v=19' : '/pet.png?v=19';
+        petImg.src = nextUrl;
       }
-      // Auto-sync context window cap when switching model families
-      ctxCapIdx = nextKey === 'claude' ? 0 : 1;
-      userChoseCap = false;
-      if (prevKey) {
+      if (keyChanged) {
+        ctxCapIdx = nextKey === 'claude' ? 0 : 1;
+        userChoseCap = false;
         triggerBounce();
       }
     }
@@ -328,7 +331,7 @@
       $('sub-5h').textContent = `${daily.steps || 0} replies today`;
 
       // Switch pet image if active model changed (Gemini <-> Claude)
-      updatePetForModel(data.currentChat?.activeModel);
+      updatePetForModel(data.currentChat?.activeModel, data.assetVersion);
 
       // Card 2: Weekly Input, Cache, Output Breakdown (Hover switches to This Chat This Week)
       renderIcoCard(data);

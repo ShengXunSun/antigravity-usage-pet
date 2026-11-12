@@ -364,9 +364,12 @@ function computeUsageSummary(requestedConvId) {
   }
   const contextLimit = inferContextLimit(activeModel);
 
+  const claudeMtime = Math.round(safeStat(join(__dirname, 'pet-claude.png'))?.mtimeMs || 20);
+
   return {
     ok: true,
-    version: '0.6.0 (v0.6)',
+    version: '0.7.1 (v0.7)',
+    assetVersion: claudeMtime,
     conversationId: activeRec ? activeRec.convId : requestedConvId || null,
     conversationCount: allConvs.length,
     currentChat: activeRec
@@ -415,7 +418,14 @@ function computeUsageSummary(requestedConvId) {
 
 const app = new SidecarApp();
 
-app.page('/', () => readFileSync(join(__dirname, 'index.html'), 'utf-8'));
+app.page(
+  '/',
+  () =>
+    new Response(readFileSync(join(__dirname, 'index.html'), 'utf-8'), {
+      contentType: 'text/html',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+    })
+);
 
 for (const [route, [file, type]] of Object.entries(STATIC_TEXT)) {
   app.api(
