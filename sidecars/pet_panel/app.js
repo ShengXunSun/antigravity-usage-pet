@@ -109,7 +109,7 @@
       const prevKey = currentPetKey;
       currentPetKey = nextKey;
       if (petImg) {
-        petImg.src = nextKey === 'claude' ? '/pet-claude.png?v=17' : '/pet.png?v=17';
+        petImg.src = nextKey === 'claude' ? '/pet-claude.png?v=18' : '/pet.png?v=18';
       }
       // Auto-sync context window cap when switching model families
       ctxCapIdx = nextKey === 'claude' ? 0 : 1;
