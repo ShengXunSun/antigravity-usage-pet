@@ -80,13 +80,12 @@ body {
 
 .ctx-card {
   position: relative;
-  cursor: pointer;
-  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.ctx-card:focus-visible {
-  border-color: rgba(56, 189, 248, 0.85);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+.ctx-card:hover {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.16);
 }
 
 .card-header {
@@ -288,9 +287,7 @@ body {
   }
 }
 
-.ctx-card:hover .ctx-tooltip,
-.ctx-card:focus-within .ctx-tooltip,
-.ctx-card.tooltip-pinned .ctx-tooltip {
+.ctx-card:hover .ctx-tooltip {
   opacity: 1;
   transform: translateY(0);
 }

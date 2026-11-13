@@ -77,7 +77,6 @@
     tokOutWeek: $('tok-out-week'),
     barOut: $('bar-out'),
     subOut: $('sub-out'),
-    ctxCard: $('ctx-card'),
     ctxCapBtn: $('ctx-cap-btn'),
     ctxStatusLabel: $('ctx-status-label'),
     valCtxWindow: $('val-ctx-window'),
@@ -412,22 +411,6 @@
       savedCapState = { cap: chosenCap, modelKey: currentModelKey || 'gemini' };
       writeStorageJson(CAP_STATE_KEY, savedCapState);
       if (latestData) renderContextWindow(latestData.currentChat);
-    });
-  }
-
-  if (el.ctxCard) {
-    el.ctxCard.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      el.ctxCard.classList.toggle('tooltip-pinned');
-    });
-    el.ctxCard.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        el.ctxCard.classList.remove('tooltip-pinned');
-        el.ctxCard.blur();
-      } else if ((e.key === 'Enter' || e.key === ' ') && e.target === el.ctxCard) {
-        e.preventDefault();
-        el.ctxCard.classList.toggle('tooltip-pinned');
-      }
     });
   }
 

@@ -14,7 +14,7 @@ Clone this repository into your global Antigravity plugins directory:
 
 - **Overall token usage.** Shows token totals and user-turn reply counts for **Daily** over 24 hours and **This Week** over 7 days, including subagent logs. Click **Pinned** or **Unpinned** to control whether mascot clicks collapse the cards.
 - **Weekly input, cache, and output tokens.** Shows 7-day totals, share bars, and prompt **Cache Hit** rate computed as `cache / (input + cache)`. Each column lists **Daily**, **Chat**, and **Reply** sub-totals. Hover the card to inspect 7-day input, cache, and output totals for the active chat.
-- **Chat context window.** Displays the active context size from the latest model step, or the post-compaction estimate after a `CHECKPOINT` event. Click **Cap** to switch between `200k` and `1M` limits for the active model family. Hover or click the card to pin a four-part composition bar with Hamilton largest-remainder percentages:
+- **Chat context window.** Displays the active context size from the latest model step, or the post-compaction estimate after a `CHECKPOINT` event. Click **Cap** to switch between `200k` and `1M` limits for the active model family. Hover the card to inspect a four-part composition bar with Hamilton largest-remainder percentages:
   - **Tools & Outputs** in `#38bdf8` estimates tool call arguments and outputs.
   - **Chat Messages** in `#34d399` estimates user prompts, model replies, and checkpoint summaries.
   - **System & Skills** in `#fbbf24` estimates system instructions and skill declarations from the first model step.
