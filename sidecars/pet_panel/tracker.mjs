@@ -476,7 +476,7 @@ export class UsageTracker {
   #lastRollup = null;
   #lastRollupExpiryMs = 0;
 
-  constructor({ env = process.env, home = homedir(), appDataDirs = null, version = '0.8.0', assetVersion = '1' } = {}) {
+  constructor({ env = process.env, home = homedir(), appDataDirs = null, version = '1.0.0', assetVersion = '1' } = {}) {
     this.#env = env;
     this.#home = home;
     this.#appDataDirs = Array.isArray(appDataDirs) ? [...appDataDirs] : null;

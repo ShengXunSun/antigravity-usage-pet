@@ -7,7 +7,7 @@ import { UsageTracker } from './tracker.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pluginManifest = JSON.parse(readFileSync(resolve(__dirname, '..', '..', 'plugin.json'), 'utf-8'));
-const PLUGIN_VERSION = pluginManifest.version || '0.8.0';
+const PLUGIN_VERSION = pluginManifest.version || '1.0.0';
 
 const rawHtmlTemplate = readFileSync(join(__dirname, 'index.html'), 'utf-8');
 const textAssets = {

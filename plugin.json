@@ -2,6 +2,6 @@
   "name": "whale-pet",
   "displayName": "Gemini Usage Pet",
   "description": "Interactive Gemini and Claude mascot pet in the side panel showing live token usage (Last Reply, This Chat, Daily 24h, This Week 7d), context window composition, and Input/Cache/Output breakdowns with sound effects.",
-  "version": "0.8.0",
+  "version": "1.0.0",
   "logo": "assets/logo.png"
 }

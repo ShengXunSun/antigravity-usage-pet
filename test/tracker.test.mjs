@@ -137,7 +137,7 @@ test('CHECKPOINT drops active context size, uses content length for msgChars, an
       },
     ]);
 
-    const tracker = new UsageTracker({ appDataDirs: [tmp.appData], version: '0.8.0' });
+    const tracker = new UsageTracker({ appDataDirs: [tmp.appData], version: '1.0.0' });
     const res = tracker.getSummary({ conversationId: 'conv-compact', now });
 
     assert.equal(res.currentChat.compactedFrom, 249000);

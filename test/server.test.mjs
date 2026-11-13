@@ -155,7 +155,7 @@ test('SidecarApp HTTP integration enforces POST auth, serves immutable hashed as
     });
     assert.equal(authPost.status, 200);
     const summary = await authPost.json();
-    assert.equal(summary.version, '0.8.0');
+    assert.equal(summary.version, '1.0.0');
     assert.equal(summary.assetVersion, assetVer);
     assert.equal(summary.currentChat.activeModel, 'Claude Sonnet 5.5 (High)');
     assert.equal(summary.currentChat.contextLimit, 200_000);
